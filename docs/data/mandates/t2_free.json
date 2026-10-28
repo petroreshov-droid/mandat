@@ -1,0 +1,22 @@
+{
+  "schema": "mandat/v1",
+  "title": "Свободный мандат",
+  "client_text": "Торгуй на своё усмотрение, главное заработай.",
+  "allowed_classes": ["bond", "etf", "share", "futures"],
+  "allowed_tickers": [],
+  "strict_whitelist": false,
+  "allowed_currencies": ["rub", "cny"],
+  "allow_sell": true,
+  "forbid_leverage": false,
+  "forbid_qual_only": false,
+  "limits": {
+    "max_position_share": null,
+    "max_order_value": null,
+    "daily_turnover": null,
+    "ask_above": null,
+    "max_price_deviation": null,
+    "max_book_share": null,
+    "max_orders_per_minute": null
+  },
+  "standing_orders": []
+}

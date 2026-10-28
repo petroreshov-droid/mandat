@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f4f5f8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)" />
+    <title>Мандат - доверенность для ИИ-агента (прототип)</title>
+    <meta
+      name="description"
+      content="Прототип: клиент задаёт границы ИИ-агенту словами, шлюз проверяет каждое его действие кодом и пишет решения в журнал с цепочкой хешей."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%234f46e5'/%3E%3Cpath d='M16 6.5l7 3v5.2c0 4.3-2.9 8-7 9.3-4.1-1.3-7-5-7-9.3V9.5l7-3z' fill='none' stroke='white' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M12.6 15.6l2.4 2.4 4.4-4.6' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="assets/site.css" />
+    <script>
+      try {
+        var savedTheme = localStorage.getItem("mandat-theme");
+        if (savedTheme === "light" || savedTheme === "dark") document.documentElement.setAttribute("data-theme", savedTheme);
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#p-agent">К действиям агента</a>
+
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3l7 3v5.5c0 4.4-3 8.2-7 9.5-4-1.3-7-5.1-7-9.5V6l7-3z" />
+              <path d="M8.8 12.2l2.2 2.2 4.4-4.6" />
+            </svg>
+          </span>
+          <h1 class="brand-title"><b>Мандат</b><span class="brand-sep"> - </span><span class="brand-tag">доверенность для <span class="nowrap">ИИ-агента</span></span></h1>
+          <span class="proto-badge">Прототип</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="hdr-clock" title="Часы симуляции: каждая ситуация на 10 минут позже предыдущей">
+            <span class="hdr-clock-label">Время симуляции</span>
+            <span class="hdr-clock-time" id="hdr-time">-</span>
+            <span class="hdr-clock-date" id="hdr-date"></span>
+          </div>
+          <button class="icon-btn" id="theme-toggle" type="button" aria-label="Переключить тему" title="Переключить тему"></button>
+          <a class="back-link" href="index.html">← О проекте</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="app">
+      <section class="intro" aria-label="Коротко">
+        <p>
+          Клиент один раз описывает границы для ИИ-агента словами. Шлюз между агентом и брокером проверяет каждое действие
+          <b>кодом, а не моделью</b>: исполнить, спросить вас или отклонить. Каждое решение ложится в журнал, который нельзя незаметно подделать.
+        </p>
+        <p class="intro-hint">Быстрее всего: «Пройти весь сценарий», около минуты.</p>
+      </section>
+
+      <section class="context" aria-label="Счёт клиента">
+        <div class="ctx-block ctx-clock">
+          <span class="ctx-label">Время симуляции</span>
+          <span class="ctx-value" id="sim-clock">-</span>
+          <span class="ctx-sub" id="sim-date"></span>
+        </div>
+        <div class="ctx-block">
+          <span class="ctx-label">Портфель</span>
+          <span class="ctx-value" id="pf-total">-</span>
+          <span class="ctx-sub" id="pf-turnover"></span>
+        </div>
+        <div class="ctx-block">
+          <span class="ctx-label">Свободные деньги</span>
+          <span class="ctx-value" id="pf-cash">-</span>
+          <span class="ctx-sub" id="pf-cash-share"></span>
+        </div>
+        <div class="ctx-positions-wrap">
+          <span class="ctx-label" id="pf-legend">Доли бумаг</span>
+          <ul class="ctx-positions" id="pf-positions"></ul>
+        </div>
+      </section>
+
+      <div class="panels">
+        <!-- 1. Мандат -->
+        <section class="panel" id="p-mandate" aria-labelledby="h-mandate">
+          <header class="panel-head">
+            <span class="step-no" aria-hidden="true">1</span>
+            <div class="panel-title">
+              <h2 id="h-mandate">Мандат</h2>
+              <p>Слова клиента → строгие правила</p>
+            </div>
+            <span class="status-pill" id="mandate-status" data-tone="neutral">Черновик</span>
+          </header>
+          <div class="panel-scroll" id="mandate-scroll">
+            <div class="panel-pad stack">
+              <div>
+                <div class="field-label" id="tpl-label">Шаблон</div>
+                <div class="choice" role="radiogroup" aria-labelledby="tpl-label" id="tpl-choice">
+                  <button type="button" class="choice-btn" role="radio" data-key="t1"><span class="tag">T1</span>Облигации, фонд и реинвест</button>
+                  <button type="button" class="choice-btn" role="radio" data-key="t2"><span class="tag">T2</span>Свободный мандат</button>
+                  <button type="button" class="choice-btn" role="radio" data-key="own">Свой текст</button>
+                </div>
+              </div>
+              <div>
+                <label class="field-label" for="client-text">Слова клиента</label>
+                <textarea id="client-text" rows="4" spellcheck="false" placeholder="Например: покупай только ОФЗ, не больше 20 000 ₽ в день, без продаж и без плеча."></textarea>
+              </div>
+              <div class="row">
+                <button type="button" class="btn btn-secondary" id="btn-compile"></button>
+                <span class="hint" id="compile-hint">Слова превратятся в правила <code>mandat/v1</code>, стресс-тест поищет дыры.</span>
+              </div>
+              <div id="own-note" class="note" hidden></div>
+              <div id="compiled" class="stack" hidden>
+                <div class="rules" id="rules" aria-label="Правила простыми словами"></div>
+                <details class="json-view" id="json-view">
+                  <summary><span class="chev" aria-hidden="true"></span>Правила в JSON · <code>mandat/v1</code></summary>
+                  <pre id="json-pre"></pre>
+                </details>
+                <div class="lint">
+                  <div class="section-head">
+                    <h3>Стресс-тест</h3>
+                    <span class="hint">детерминированные правила, без модели</span>
+                  </div>
+                  <ul class="findings" id="findings"></ul>
+                </div>
+                <div class="sign-row">
+                  <button type="button" class="btn btn-primary" id="btn-sign"></button>
+                  <span class="hint" id="sign-hint"></span>
+                </div>
+              </div>
+              <div id="seal" class="seal" hidden></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. Агент работает -->
+        <section class="panel" id="p-agent" aria-labelledby="h-agent">
+          <header class="panel-head">
+            <span class="step-no" aria-hidden="true">2</span>
+            <div class="panel-title">
+              <div class="title-row">
+                <h2 id="h-agent">Агент работает</h2>
+                <span class="status-pill" id="agent-status" data-tone="neutral">Ждёт мандата</span>
+              </div>
+              <p>Каждое действие - через шлюз</p>
+            </div>
+            <button type="button" class="switch" id="btn-kill" role="switch" aria-checked="false">
+              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+              <span class="switch-label">Выключатель агента</span>
+            </button>
+          </header>
+          <div class="agent-controls">
+            <div class="run-row">
+              <button type="button" class="btn btn-primary" id="btn-run-all"></button>
+              <button type="button" class="btn btn-secondary" id="btn-resume"></button>
+              <button type="button" class="btn btn-ghost" id="btn-reset"></button>
+            </div>
+            <div class="narrator" id="narrator" hidden>
+              <div class="narrator-top">
+                <span id="narrator-step"></span>
+                <span class="narrator-bar" aria-hidden="true"><span id="narrator-bar"></span></span>
+              </div>
+              <p class="narrator-text" id="narrator-text" aria-live="polite"></p>
+            </div>
+            <details class="sc-details" id="sc-details" open>
+              <summary><span class="chev" aria-hidden="true"></span>Или по одному <span class="sc-count">10 ситуаций</span></summary>
+              <ul class="scenarios" id="scenarios" aria-label="Ситуации по одной"></ul>
+              <p class="hint" id="sc-hint"></p>
+            </details>
+          </div>
+          <div class="panel-scroll feed-scroll" id="feed-scroll">
+            <div class="feed" id="feed">
+              <div class="empty" id="feed-empty">
+                <div class="empty-icon" aria-hidden="true"></div>
+                <p class="empty-title">Агент ещё ничего не делал</p>
+                <p class="empty-text">Подпишите мандат и выберите ситуацию. Или нажмите «Пройти весь сценарий», и демо пройдёт само.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Журнал -->
+        <section class="panel" id="p-journal" aria-labelledby="h-journal">
+          <header class="panel-head">
+            <span class="step-no" aria-hidden="true">3</span>
+            <div class="panel-title">
+              <h2 id="h-journal">Журнал</h2>
+              <p>Подделку видно по цепочке хешей</p>
+            </div>
+            <span class="status-pill" id="journal-count" data-tone="neutral">0 записей</span>
+          </header>
+          <div class="journal-top">
+            <div class="metrics" id="metrics"></div>
+            <div class="compare" id="compare"></div>
+            <div class="row">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-verify"></button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-tamper"></button>
+            </div>
+            <div class="verify-status" id="verify-status" role="status" hidden></div>
+          </div>
+          <div class="panel-scroll journal-scroll" id="journal-scroll">
+            <ol class="j-list" id="j-list" reversed></ol>
+            <div class="empty empty-sm" id="journal-empty">
+              <p class="empty-title">Журнал пуст</p>
+              <p class="empty-text">Первая запись появится, когда клиент подпишет мандат.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <span>Рыночные данные синтетические. В MVP данные и заявки идут через песочницу T-Invest MCP.</span>
+      <span>Edge Lab, конкурс «Инвест. Премаркет».</span>
+    </footer>
+
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <script>
+      // По http(s) грузим настоящие ES-модули. С file:// Chrome модули не пускает,
+      // поэтому там подключаем собранный бандл (node assets/build_data.mjs).
+      (function () {
+        var s = document.createElement("script");
+        if (location.protocol === "file:") {
+          s.src = "assets/demo.bundle.js";
+        } else {
+          s.type = "module";
+          s.src = "assets/demo.js";
+        }
+        document.body.appendChild(s);
+      })();
+    </script>
+  </body>
+</html>

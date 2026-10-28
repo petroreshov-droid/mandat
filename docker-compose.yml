@@ -1,0 +1,14 @@
+# MCP-сервер Мандата с mock-брокером: http://127.0.0.1:8765/mcp (Streamable HTTP)
+# Сервер без аутентификации, поэтому порт открыт только на localhost хоста.
+services:
+  mandat:
+    build: .
+    image: mandat:0.1.0
+    ports:
+      - "127.0.0.1:8765:8765"
+    volumes:
+      - mandat-data:/data
+    restart: unless-stopped
+
+volumes:
+  mandat-data:

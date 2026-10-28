@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Мандат - презентация</title>
+<meta name="description" content="«Мандат»: шлюз между ИИ-агентом и T-Invest MCP. Клиент задаёт границы словами, код проверяет каждое действие агента, журнал позволяет воспроизвести любое решение.">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #ffffff; --bg2: #f6f7fb; --card: #ffffff; --line: #e3e7f0; --line2: #cfd5e3;
+  --ink: #0f172a; --muted: #55627a; --faint: #8a95ab;
+  --accent: #4f46e5; --accent-soft: #eef0ff; --teal: #14b8a6;
+  --ok: #0f8a5f; --ok-soft: #e6f6ef; --ask: #a15c00; --ask-soft: #fff4e0; --deny: #c0262d; --deny-soft: #fdecec;
+  --grad: linear-gradient(135deg, #4f46e5, #14b8a6);
+  --shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.06);
+  --r: 18px;
+  --stage: #e9ecf2;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--stage); color: var(--ink); font: 22px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-decoration: none; }
+p { text-wrap: pretty; }
+.nw { white-space: nowrap; }
+
+/* Колода: по умолчанию слайды идут столбиком (без JS и в ?print) */
+.deck { padding: 24px 0; }
+.slide { position: relative; width: 1280px; height: 720px; margin: 0 auto 24px; padding: 56px 72px 76px; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 20px 50px rgba(15,23,42,.10); }
+
+/* Режим показа: один слайд, вписан в окно */
+html.present, html.present body { height: 100%; overflow: hidden; }
+html.present .deck { position: fixed; inset: 0; padding: 0; }
+html.present .slide { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -50%) scale(var(--s, 1)); display: none; }
+html.present .slide.active { display: flex; }
+.slide.enter { animation: enter .24s ease-out; }
+@keyframes enter { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .slide.enter { animation: none; } }
+
+/* Элементы управления на экране */
+.ui { position: fixed; top: 12px; z-index: 5; display: flex; align-items: center; height: 34px; font-size: 13px; font-weight: 600; line-height: 1; color: var(--muted); background: rgba(255,255,255,.88); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border: 1px solid var(--line); border-radius: 999px; box-shadow: 0 2px 8px rgba(15,23,42,.08); transition: opacity .3s ease; }
+.back { left: 12px; padding: 0 14px; color: var(--ink); }
+.back:hover { color: var(--accent); }
+.ctl { right: 12px; padding: 0 3px; display: none; }
+html.present .ctl { display: flex; }
+.ctl button { width: 28px; height: 28px; border: 0; padding: 0; border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: 18px; line-height: 1; cursor: pointer; }
+.ctl button:hover { background: var(--bg2); color: var(--ink); }
+#count { min-width: 60px; text-align: center; font-variant-numeric: tabular-nums; }
+html.idle .ui { opacity: 0; pointer-events: none; }
+html.printmode .ui { display: none; }
+
+/* Печать и PDF: каждый слайд ровно на своей странице */
+@page { size: 1280px 720px; margin: 0; }
+@media print {
+  html, body { width: 1280px; height: auto !important; overflow: visible !important; background: #fff !important; }
+  .deck { position: static !important; padding: 0 !important; }
+  .slide { display: flex !important; position: relative !important; left: auto !important; top: auto !important; transform: none !important; margin: 0 !important; box-shadow: none !important; animation: none !important; break-after: page; page-break-after: always; break-inside: avoid; page-break-inside: avoid; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .ui { display: none !important; }
+  /* background-clip: text оставляет в PDF волосяную линию по краю */
+  .grad-text { background: none !important; color: var(--accent) !important; }
+}
+
+/* Общие элементы слайда */
+.sf { position: absolute; left: 72px; right: 72px; bottom: 24px; display: flex; align-items: center; justify-content: space-between; font-size: 14px; line-height: 20px; color: var(--faint); }
+.sf b { display: inline-flex; align-items: center; gap: 9px; font-weight: 600; color: var(--muted); }
+.sf b::before { content: ""; width: 12px; height: 12px; border-radius: 4px; background: var(--grad); }
+.sf-n { font-variant-numeric: tabular-nums; }
+.kicker { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 15px; line-height: 20px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.kicker::before { content: ""; width: 8px; height: 8px; border-radius: 3px; background: var(--grad); }
+h2 { margin: 14px 0 0; font-size: 46px; line-height: 1.1; font-weight: 800; letter-spacing: -.028em; text-wrap: balance; }
+h3 { margin: 0; font-weight: 700; letter-spacing: -.012em; }
+.sub { margin: 14px 0 0; max-width: 1060px; font-size: 22px; line-height: 1.45; color: var(--muted); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); }
+.label { display: block; font-size: 13.5px; line-height: 18px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+.src { display: block; font-size: 14.5px; line-height: 1.4; color: var(--faint); }
+.badge { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; font-size: 13.5px; font-weight: 800; letter-spacing: .06em; }
+.b-ok { color: var(--ok); background: var(--ok-soft); }
+.b-ask { color: var(--ask); background: var(--ask-soft); }
+.b-deny { color: var(--deny); background: var(--deny-soft); }
+
+/* 1. Титул */
+.s1 { justify-content: center; padding-bottom: 56px; background: radial-gradient(780px 500px at -8% -14%, #e8eaff 0%, rgba(232,234,255,0) 70%), radial-gradient(640px 440px at 106% 112%, rgba(20,184,166,.13) 0%, rgba(20,184,166,0) 70%), #fff; }
+.s1-grid { display: grid; grid-template-columns: 1fr 470px; gap: 56px; align-items: center; }
+.eyebrow { display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 16px; font-weight: 650; }
+h1 { margin: 34px 0 0; font-size: 140px; line-height: .92; font-weight: 800; letter-spacing: -.05em; }
+.s1-sub { margin: 26px 0 0; font-size: 38px; line-height: 1.2; font-weight: 600; letter-spacing: -.02em; color: var(--muted); }
+.mcard { margin: 0; padding: 28px 30px 26px; background: #fff; border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 2px 4px rgba(15,23,42,.04), 0 28px 60px rgba(15,23,42,.12); }
+.mcard-h { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; }
+.mcard-h i { width: 22px; height: 22px; border-radius: 7px; background: var(--grad); }
+.sig { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--ok); background: var(--ok-soft); padding: 5px 11px; border-radius: 999px; }
+.mcard blockquote { margin: 20px 0 0; font-size: 22px; line-height: 1.5; color: var(--ink); }
+.mcard-f { display: flex; gap: 8px; margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+.mcard figcaption { margin-top: 14px; font-size: 15px; line-height: 1.4; color: var(--muted); }
+
+/* 2. Проблема */
+.p2 { display: grid; grid-template-columns: 440px 1fr; gap: 40px; margin-top: 32px; align-items: start; }
+.p2-date { font-size: 68px; line-height: 1; font-weight: 800; letter-spacing: -.035em; }
+.p2-what { margin: 14px 0 0; font-size: 23px; line-height: 1.4; }
+.p2 .src { margin-top: 8px; }
+.p2-no { margin: 22px 0 0; font-size: 20px; line-height: 1.45; color: var(--muted); }
+.p2-no b { color: var(--ink); font-weight: 650; }
+.qcard { margin: 0; padding: 26px 30px 24px; background: var(--bg2); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px var(--r) var(--r) 6px; }
+.qcard blockquote { margin: 12px 0 0; font-size: 22px; line-height: 1.5; }
+.qcard figcaption { margin-top: 14px; font-size: 15px; color: var(--faint); }
+.ext { margin-top: auto; display: grid; grid-template-columns: 200px 1fr auto 1fr; gap: 18px; align-items: center; }
+.ext-l { font-size: 17px; line-height: 1.35; font-weight: 700; color: var(--muted); }
+.ext-c { padding: 16px 22px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.ext-c b { display: block; font-size: 21px; line-height: 1.3; }
+.ext-c span { display: block; margin-top: 2px; font-size: 17px; color: var(--muted); }
+.ext-or { font-size: 16px; font-weight: 600; color: var(--faint); }
+
+/* 3. Факты */
+.f-top, .f-bot { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.f-top { margin-top: 28px; }
+.f-bot { margin-top: 18px; }
+.fact { padding: 22px 28px 20px; }
+.f-num { font-size: 76px; line-height: .95; font-weight: 800; letter-spacing: -.04em; }
+.grad-text { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.dots { display: flex; gap: 7px; margin-top: 16px; }
+.dots i { width: 14px; height: 14px; border-radius: 50%; background: #e3e7f0; }
+.dots i.on { background: var(--grad); }
+.range { position: relative; height: 14px; margin-top: 16px; border-radius: 999px; background: #e3e7f0; }
+.range i { position: absolute; top: 0; bottom: 0; left: 23%; width: 27%; border-radius: 999px; background: var(--accent); }
+.fact p { margin: 14px 0 0; font-size: 19px; line-height: 1.42; color: var(--muted); }
+.fact p b { color: var(--ink); font-weight: 650; }
+.fact .src { margin-top: 8px; }
+.fact2 { padding: 20px 28px 18px; }
+.fact2 h3 { font-size: 21px; line-height: 1.3; }
+.fact2 p { margin: 8px 0 0; font-size: 17px; line-height: 1.4; color: var(--muted); }
+.fact2 .src { margin-top: 8px; }
+.seen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
+.seen span { font-size: 14px; font-weight: 600; line-height: 1; padding: 7px 10px; border-radius: 999px; }
+.seen .lbl { padding-left: 0; padding-right: 2px; color: var(--muted); }
+.seen .yes { color: var(--ink); background: var(--bg2); border: 1px solid var(--line2); }
+.seen .no { color: var(--faint); border: 1px dashed var(--line2); text-decoration: line-through; }
+.ap2 { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: start; }
+.ap2-n { font-size: 50px; line-height: 1; font-weight: 800; letter-spacing: -.03em; color: var(--accent); }
+
+/* 4. Решение */
+.trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 28px; }
+.trio > div { padding-top: 14px; border-top: 2px solid var(--ink); }
+.trio b { display: block; font-size: 25px; line-height: 1.2; letter-spacing: -.01em; }
+.trio p { margin: 6px 0 0; font-size: 19px; line-height: 1.42; color: var(--muted); }
+.modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 32px; }
+.mode { padding: 22px 24px 22px; border-top: 4px solid var(--line); }
+.mode.ok { border-top-color: var(--ok); }
+.mode.ask { border-top-color: var(--ask); }
+.mode.deny { border-top-color: var(--deny); }
+.mode h3 { margin-top: 14px; font-size: 24px; line-height: 1.2; }
+.mode ul { margin: 12px 0 0; padding: 0; list-style: none; }
+.mode li { position: relative; margin-top: 8px; padding-left: 18px; font-size: 19px; line-height: 1.4; color: var(--muted); }
+.mode li::before { content: ""; position: absolute; left: 0; top: 11px; width: 7px; height: 7px; border-radius: 50%; }
+.mode.ok li::before { background: var(--ok); }
+.mode.ask li::before { background: var(--ask); }
+.mode.deny li::before { background: var(--deny); }
+
+/* 5. Шаги */
+.steps { margin: 26px 0 0; padding: 0; list-style: none; }
+.steps li { display: grid; grid-template-columns: 48px 320px 1fr; gap: 24px; align-items: start; padding: 17px 0; border-top: 1px solid var(--line); }
+.steps li:last-child { border-bottom: 1px solid var(--line); }
+.steps .n { width: 48px; height: 48px; border-radius: 14px; background: var(--accent-soft); color: var(--accent); font-size: 22px; font-weight: 800; display: grid; place-items: center; }
+.steps b { padding-top: 9px; font-size: 23px; line-height: 1.3; letter-spacing: -.01em; }
+.steps p { margin: 0; padding-top: 9px; font-size: 20px; line-height: 1.45; color: var(--muted); }
+.steps p.q { color: var(--ink); }
+.steps p strong { color: var(--ink); font-weight: 650; }
+
+/* 6. Сценарий */
+.flow { margin: 24px 0 0; }
+.flow > div { display: grid; grid-template-columns: 180px 1fr; gap: 24px; padding: 15px 0; border-top: 1px solid var(--line); }
+.flow > div:last-child { border-bottom: 1px solid var(--line); }
+.flow dt { padding-top: 6px; font-size: 14.5px; line-height: 18px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+.flow dd { margin: 0; font-size: 21px; line-height: 1.42; text-wrap: pretty; }
+.outs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.outs span { display: inline-flex; align-items: center; gap: 9px; padding: 5px 13px 5px 5px; border-radius: 999px; font-size: 15px; font-weight: 600; line-height: 1.2; }
+.outs em { font-style: normal; font-size: 11.5px; font-weight: 800; letter-spacing: .06em; padding: 5px 9px; border-radius: 999px; background: #fff; }
+.o-ok { color: var(--ok); background: var(--ok-soft); }
+.o-ask { color: var(--ask); background: var(--ask-soft); }
+.o-deny { color: var(--deny); background: var(--deny-soft); }
+
+/* 7. Архитектура */
+.s7 { padding-top: 44px; }
+.s7-head { width: 1000px; margin: 0 auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; }
+.s7-head h2 { margin: 0; font-size: 42px; line-height: 1; }
+.s7-head p { margin: 0; max-width: 560px; font-size: 18px; line-height: 1.45; color: var(--muted); }
+.arch { width: 1000px; height: 550px; margin: 18px auto 0; overflow: hidden; border-radius: 20px; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow); }
+.arch img { display: block; width: 100%; height: 100%; color-scheme: light; }
+
+/* 8. AI и код */
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 26px; }
+.col { padding: 22px 26px 18px; border-top: 4px solid var(--accent); }
+.col.code { border-top-color: var(--teal); }
+.col h3 { font-size: 26px; line-height: 1.2; }
+.col ul { margin: 10px 0 0; padding: 0; list-style: none; }
+.col li { position: relative; padding: 8px 0 8px 24px; font-size: 19px; line-height: 1.42; border-top: 1px solid var(--line); }
+.col li:first-child { border-top: 0; }
+.col li::before { content: ""; position: absolute; left: 1px; top: 18px; width: 9px; height: 9px; border-radius: 3px; background: var(--accent); }
+.col.code li::before { background: var(--teal); }
+
+/* 9. Проверка */
+.s9 { display: grid; grid-template-columns: 560px 1fr; gap: 36px; margin-top: 26px; flex: 1; min-height: 0; }
+.s9 .blk + .blk { margin-top: 18px; }
+.s9 .blk p { margin: 6px 0 0; font-size: 21px; line-height: 1.42; }
+.thr { margin-top: 8px; }
+.thr > div { display: grid; grid-template-columns: 136px 1fr; gap: 16px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.thr > div:first-child { border-top: 1px solid var(--line); }
+.thr b { font-size: 30px; line-height: 1.1; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+.thr span { font-size: 16.5px; line-height: 1.38; color: var(--muted); }
+.thr span strong { color: var(--ink); font-weight: 650; }
+.res { display: flex; flex-direction: column; min-height: 0; }
+.bench { flex: 1; min-height: 300px; margin-top: 10px; padding: 18px 22px; background: var(--bg2); border: 1px solid var(--line); border-radius: var(--r); display: flex; flex-direction: column; overflow: hidden; }
+.bench > p:only-child { margin: auto; font-size: 20px; line-height: 1.4; color: var(--faint); text-align: center; }
+.bench p { margin: 10px 0 0; font-size: 14.5px; line-height: 1.4; color: var(--muted); }
+.bench h3, .bench h4 { margin: 0 0 8px; font-size: 18px; }
+.bench table { width: 100%; border-collapse: collapse; font-size: 18px; line-height: 1.3; font-variant-numeric: tabular-nums; }
+.bench th { padding: 0 10px 10px 0; text-align: left; font-size: 13.5px; font-weight: 650; color: var(--muted); border-bottom: 1px solid var(--line2); }
+.bench td { padding: 11px 10px 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.bench tr:last-child td { border-bottom: 0; }
+.bench th:not(:first-child), .bench td:not(:first-child) { padding-right: 0; padding-left: 12px; text-align: right; white-space: nowrap; }
+.res .src { margin-top: 10px; }
+
+/* 10. Расчёт */
+.c-row { display: grid; grid-template-columns: 560px 1fr; gap: 20px; margin-top: 24px; align-items: start; }
+.tbl { padding: 4px 22px; }
+.tbl table { width: 100%; border-collapse: collapse; font-size: 16px; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.tbl th { padding: 12px 0 10px; text-align: left; font-size: 13.5px; font-weight: 650; color: var(--muted); border-bottom: 1px solid var(--line); }
+.tbl td { padding: 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl .r { padding-left: 14px; text-align: right; white-space: nowrap; }
+.tbl td:first-child { white-space: nowrap; }
+.c-cap { font-size: 14px; line-height: 18px; font-weight: 650; color: var(--muted); }
+.price { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
+.pt { padding: 16px 18px 14px; }
+.pt small { display: block; font-size: 14px; line-height: 1.3; font-weight: 650; color: var(--muted); }
+.pt b { display: block; margin-top: 6px; font-size: 38px; line-height: 1.1; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.pt span { display: block; margin-top: 4px; font-size: 14px; color: var(--faint); }
+.plus { margin: 12px 0 0; font-size: 16px; line-height: 1.4; color: var(--muted); }
+.plus b { color: var(--ink); }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 18px; }
+.kpi { padding: 16px 22px 16px; }
+.kpi h3 { margin-top: 6px; font-size: 21px; line-height: 1.25; }
+.kpi p { margin: 6px 0 0; font-size: 16px; line-height: 1.4; color: var(--muted); }
+.c-note { margin: auto 0 0; font-size: 13.5px; line-height: 1.4; color: var(--faint); }
+
+/* 11. Риски */
+.risks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 28px; }
+.risk { padding: 22px 22px 20px; display: flex; flex-direction: column; }
+.risk .top { min-height: 212px; }
+.risk h3 { margin-top: 10px; font-size: 22px; line-height: 1.28; }
+.risk .cons { margin: 10px 0 0; font-size: 17.5px; line-height: 1.4; color: var(--muted); }
+.risk p { text-wrap: wrap; }
+.risk .chk { padding-top: 16px; border-top: 1px solid var(--line); }
+.risk .chk .label { color: var(--muted); }
+.risk .chk p { margin: 8px 0 0; font-size: 18.5px; line-height: 1.4; }
+.risk .bar2 { display: inline-block; margin-top: 12px; padding: 6px 10px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-size: 15px; line-height: 1.3; font-weight: 700; }
+
+/* 12. План */
+.s12 { display: grid; grid-template-columns: 680px 1fr; gap: 36px; margin-top: 26px; }
+.gantt { margin: 0; padding: 0; list-style: none; }
+.gantt li { display: grid; grid-template-columns: 58px 110px 1fr; gap: 16px; align-items: start; padding: 10px 0; border-top: 1px solid var(--line); }
+.gantt li:last-child { border-bottom: 1px solid var(--line); }
+.gantt b { font-size: 16px; line-height: 25px; font-weight: 800; color: var(--accent); }
+.gantt .bar { position: relative; height: 8px; margin-top: 9px; border-radius: 999px; background: #e3e7f0; }
+.gantt .bar i { position: absolute; top: 0; bottom: 0; border-radius: 999px; background: var(--grad); }
+.gantt p { margin: 0; font-size: 18px; line-height: 25px; }
+.demo { padding: 20px 24px 18px; background: var(--accent-soft); border: 1px solid #dcdffe; border-radius: var(--r); }
+.demo ul { margin: 10px 0 0; padding: 0; list-style: none; }
+.demo li { position: relative; padding: 3px 0 3px 22px; font-size: 18px; line-height: 1.4; }
+.demo li::before { content: "✓"; position: absolute; left: 0; top: 3px; font-size: 15px; font-weight: 800; color: var(--accent); }
+.links { margin-top: 16px; padding: 4px 20px; }
+.lk { display: grid; grid-template-columns: 82px 1fr; gap: 10px; align-items: baseline; padding: 11px 0; border-top: 1px solid var(--line); color: var(--accent); }
+.lk:first-child { border-top: 0; }
+.lk small { font-size: 12.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.lk span { font-size: 15.5px; font-weight: 650; letter-spacing: -.01em; white-space: nowrap; }
+.s12 .src { margin-top: 14px; }
+
+/* 13. Источники */
+.srcs { margin: 26px 0 0; padding: 0; list-style: none; counter-reset: src; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; column-gap: 36px; }
+.srcs li { position: relative; counter-increment: src; padding: 12px 0 12px 38px; border-top: 1px solid var(--line); font-size: 16px; line-height: 1.42; color: var(--muted); }
+.srcs li::before { content: counter(src); position: absolute; left: 0; top: 13px; width: 24px; height: 24px; border-radius: 7px; background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 800; line-height: 24px; text-align: center; }
+.srcs b { color: var(--ink); font-weight: 650; }
+.srcs a { display: block; margin-top: 3px; font-size: 14.5px; font-weight: 600; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<a class="ui back" href="index.html">← Сайт</a>
+<nav class="ui ctl" aria-label="Слайды">
+  <button type="button" id="prev" aria-label="Предыдущий слайд">‹</button>
+  <span id="count" aria-live="polite">1 / 13</span>
+  <button type="button" id="next" aria-label="Следующий слайд">›</button>
+</nav>
+
+<main class="deck" id="deck">
+
+<!-- 1 -->
+<section class="slide s1">
+  <div class="s1-grid">
+    <div>
+      <span class="eyebrow">Edge Lab · «Инвест. Премаркет» · T-Invest MCP</span>
+      <h1>Мандат</h1>
+      <p class="s1-sub">доверенность для ИИ-агента<br>в инвестициях</p>
+    </div>
+    <figure class="mcard">
+      <div class="mcard-h"><i aria-hidden="true"></i>Мандат клиента<span class="sig">✓ подписан</span></div>
+      <blockquote>«Только ОФЗ 26238, 26243, 26248, TMOS, Сбер и Лукойл, не больше 15% в&nbsp;одной бумаге, без плеча и продаж, купоны реинвестируй»</blockquote>
+      <div class="mcard-f"><span class="badge b-ok">ALLOW</span><span class="badge b-ask">ASK</span><span class="badge b-deny">DENY</span></div>
+      <figcaption>Каждое действие агента проверяет код, а не модель</figcaption>
+    </figure>
+  </div>
+  <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">1 / 13</span></footer>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <p class="kicker">Проблема</p>
+  <h2>Агенты уже получили доступ к счетам.<br>Контроль остался за продуктом</h2>
+  <div class="p2">
+    <div>
+      <div class="p2-date">10.09.2026</div>
+      <p class="p2-what">Т-Инвестиции открыли внешним <span class="nw">ИИ-агентам</span> доступ к&nbsp;счетам через MCP</p>
+      <span class="src">Ведомости, 10.09.2026</span>
+      <p class="p2-no">Подключение не даёт <b>ни&nbsp;границ</b>, <b>ни&nbsp;подтверждений</b>, <b>ни&nbsp;разбора спорной сделки</b></p>
+    </div>
+    <figure class="qcard">
+      <span class="label">Позиция банка</span>
+      <blockquote>«В продукте нужно предусмотреть статусы заявок, обработку ошибок и подтверждение операций: само подключение через MCP не означает, что агент будет запрашивать ваше согласие на каждую сделку».</blockquote>
+      <figcaption>Т-Инвестиции, 16.10.2026</figcaption>
+    </figure>
+  </div>
+  <div class="ext">
+    <span class="ext-l">Сейчас выбор между крайностями</span>
+    <div class="ext-c"><b>Подтверждать каждую сделку</b><span>тогда это не автоматизация</span></div>
+    <span class="ext-or">или</span>
+    <div class="ext-c"><b>Дать агенту полный доступ</b><span>и надеяться на модель</span></div>
+  </div>
+  <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">2 / 13</span></footer>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <p class="kicker">Факты</p>
+  <h2>Почти никто не держит границы в коде</h2>
+  <div class="f-top">
+    <div class="card fact">
+      <div class="f-num"><span class="grad-text">1 из 17</span></div>
+      <div class="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <p><b>торгующих ИИ-интеграций с брокерами проверяет лимиты в коде.</b> Ещё 9 из 17 сразу работают на реальном счёте</p>
+      <span class="src">Аудит 22 интеграций (TeamTraders, Smart-Lab), данные на 23.10.2026</span>
+    </div>
+    <div class="card fact">
+      <div class="f-num">23-50%</div>
+      <div class="range" aria-hidden="true"><i></i></div>
+      <p><b>случаев, в которых языковые модели соглашаются с&nbsp;пользователем.</b> Проверку границ нельзя поручать тому, кто уступает давлению</p>
+      <span class="src">R&amp;D-центр Т-Технологий, 28.04.2026</span>
+    </div>
+  </div>
+  <div class="f-bot">
+    <div class="card fact2">
+      <h3>У брокера нет поручения и ответа модели</h3>
+      <div class="seen"><span class="lbl">Брокер видит:</span><span class="yes">заявку</span><span class="no">поручение клиента</span><span class="no">ответ модели</span></div>
+      <p>Когда агент ошибся, спорную сделку не разобрать</p>
+      <span class="src">Ведомости, 10.09.2026</span>
+    </div>
+    <div class="card fact2 ap2">
+      <div class="ap2-n">AP2</div>
+      <div>
+        <h3>В платежах это уже решают подписанными мандатами</h3>
+        <p>В инвестициях для российского брокера готового слоя мы не нашли</p>
+        <span class="src">Протокол AP2, Google, 16.09.2025</span>
+      </div>
+    </div>
+  </div>
+  <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">3 / 13</span></footer>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <p class="kicker">Решение</p>
+  <h2>Мандат, шлюз и журнал</h2>
+  <div class="trio">
+    <div><b>Мандат</b><p>Доверенность с границами, которую клиент подписывает один раз</p></div>
+    <div><b>Шлюз</b><p>Стоит между любым агентом и <span class="nw">T-Invest MCP</span> и&nbsp;сначала проверяет каждую заявку кодом</p></div>
+    <div><b>Журнал</b><p>Всё записывается, любое решение можно воспроизвести</p></div>
+  </div>
+  <div class="modes">
+    <div class="card mode ok">
+      <span class="badge b-ok">ALLOW</span>
+      <h3>Внутри мандата - сам</h3>
+      <ul>
+        <li>Купон → реинвест в ОФЗ из списка клиента</li>
+        <li>10-е число → докупка фонда на&nbsp;<span class="nw">10 000 ₽</span></li>
+        <li>Без подтверждений</li>
+      </ul>
+    </div>
+    <div class="card mode ask">
+      <span class="badge b-ask">ASK</span>
+      <h3>На границе - спрашивает</h3>
+      <ul>
+        <li>Бумага не из списка, крупная заявка или тонкий стакан</li>
+        <li>Одно нажатие в Telegram</li>
+        <li>Шлюз заново проверяет заявку на свежих данных</li>
+      </ul>
+    </div>
+    <div class="card mode deny">
+      <span class="badge b-deny">DENY</span>
+      <h3>За границей - отказ</h3>
+      <ul>
+        <li>Плечо, фьючерсы, продажи, ошибка лота, попытка поменять мандат</li>
+        <li>Агент получает причину</li>
+        <li>После серии нарушений - пауза</li>
+      </ul>
+    </div>
+  </div>
+  <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">4 / 13</span></footer>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <p class="kicker">Решение</p>
+  <h2>Как это работает</h2>
+  <ol class="steps">
+    <li><span class="n">1</span><b>Клиент пишет мандат словами</b><p class="q">«Только ОФЗ 26238, 26243, 26248, TMOS, Сбер и Лукойл, не больше 15% в&nbsp;одной бумаге, без плеча и продаж, купоны реинвестируй»</p></li>
+    <li><span class="n">2</span><b>LLM собирает правила и ищет дыры</b><p>Текст → JSON по фиксированной схеме. Стресс-тест находит «нет дневного лимита», клиент закрывает дыру и подписывает. Хеш фиксирует версию</p></li>
+    <li><span class="n">3</span><b>Агент работает, шлюз проверяет</b><p><strong>19 проверок на каждое действие:</strong> список, класс, валюта, лот, цена против рынка, деньги без плеча, доля, размер, дневной оборот, стакан, частота, дубли</p></li>
+    <li><span class="n">4</span><b>Всё пишется в журнал</b><p>Цепочка «поручение → данные → решение → проверка → заявка» с хешами. Любое решение воспроизводится, подделка записи видна сразу</p></li>
+  </ol>
+  <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">5 / 13</span></footer>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <p class="kicker">Сценарий</p>
+  <h2>Основной сценарий: пришёл купон</h2>
+  <dl class="flow">
+    <div><dt>Вход</dt><dd>Подписанный мандат, событие о купоне <b class="nw">4 200 ₽</b>, свежие портфель, цена, стакан и статус торгов из T-Invest MCP и API</dd></div>
+    <div><dt>Действия</dt><dd>Агент формирует заявку, шлюз перехватывает её и проверяет кодом
+      <div class="outs"><span class="o-ok"><em>ALLOW</em>всё в норме → лимитная заявка</span><span class="o-ask"><em>ASK</em>мягкое нарушение → вопрос клиенту</span><span class="o-deny"><em>DENY</em>жёсткое → отказ</span></div></dd></div>
+    <div><dt>Результат</dt><dd>Заявка у брокера и воспроизводимая запись в журнале с объяснением простыми словами</dd></div>
+    <div><dt>Кто использует</dt><dd>Клиент получает уведомление, агент - статус или причину отказа, поддержка брокера - журнал для разбора</dd></div>
+    <div><dt>Дальше</dt><dd>Шлюз следит за исполнением и ждёт следующего события; после серии отказов ставит агента на паузу и зовёт клиента</dd></div>
+  </dl>
+  <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">6 / 13</span></footer>
+</section>
+
+<!-- 7 -->
+<section class="slide s7">
+  <div class="s7-head">
+    <h2>Архитектура</h2>
+    <p>LLM работает только с языком. Деньги, лимиты и лоты считает код. Агент без доработки видит обычный MCP-сервер</p>
+  </div>
+  <figure class="arch"><img src="assets/architecture.svg" alt="Схема: агент подключается к шлюзу Мандат по MCP, шлюз проверяет заявку движком правил по подписанному мандату и передаёт её в T-Invest MCP, решения пишутся в журнал" width="1200" height="660"></figure>
+  <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">7 / 13</span></footer>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <p class="kicker">Роли</p>
+  <h2>Что делает AI, а что код</h2>
+  <p class="sub">Клиенты пишут границы свободно, поэтому нужен язык. Проверку денег языковой модели не доверяем</p>
+  <div class="two">
+    <div class="card col">
+      <h3>AI: язык</h3>
+      <ul>
+        <li>Мандат из слов клиента → JSON-правила и карточка «что агент сможет, а что нет»</li>
+        <li>Стресс-тест до подписи: поиск смысловых дыр; при&nbsp;неясности - вопрос, а не догадка</li>
+        <li>RAG по справочнику: «Сбер» и «длинные ОФЗ» → реальные бумаги, без выдуманных тикеров</li>
+        <li>Исполнение поручений по событиям: купон, дата докупки, порог доли</li>
+        <li>Объяснение решений и отказов простыми словами</li>
+      </ul>
+    </div>
+    <div class="card col code">
+      <h3>Код: деньги и границы</h3>
+      <ul>
+        <li>19 проверок на каждую заявку, решение ALLOW, ASK или DENY</li>
+        <li>Деньги, доли, лоты и оборот по данным T-Invest</li>
+        <li>Мандат меняется только подписью клиента: просьба в чате или текст новости ничего не меняют</li>
+        <li>Пауза после серии нарушений и выключатель</li>
+        <li>Журнал с цепочкой хешей и replay</li>
+      </ul>
+    </div>
+  </div>
+  <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">8 / 13</span></footer>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <p class="kicker">Проверка</p>
+  <h2>Как проверяем, что это работает</h2>
+  <div class="s9">
+    <div>
+      <div class="blk"><span class="label">Гипотеза</span><p>Через Мандат агент не исполняет ни одного действия вне мандата клиента, а законные операции проходят</p></div>
+      <div class="blk"><span class="label">Базлайн</span><p>Тот же агент, подключённый к брокеру напрямую, с&nbsp;мандатом в&nbsp;системном промпте</p></div>
+      <div class="blk"><span class="label">Метрика и пороги</span>
+        <div class="thr">
+          <div><b>0</b><span><strong>нарушений мандата у брокера</strong> без подтверждения клиента, порог для жёстких правил</span></div>
+          <div><b>&lt; 5%</b><span><strong>ложных блокировок</strong> законных операций, <span class="nw">провал - больше 10%</span></span></div>
+          <div><b>&lt; 300 мс</b><span><strong>добавленная задержка p95</strong> вместе с запросом данных у брокера</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="res">
+      <span class="label">Результаты прототипа</span>
+      <div class="bench" id="bench-slide"><!--BENCH_SLIDE--><table>
+<thead><tr><th></th><th>Без шлюза</th><th>Через Мандат</th></tr></thead>
+<tbody>
+<tr><td>Скриптовые атаки у брокера</td><td>237 из 333</td><td><b>0</b></td></tr>
+<tr><td>T-lite-it-2.1 вышел за мандат</td><td>12 из 72</td><td><b>0</b></td></tr>
+<tr><td>Ошибки T-lite в рутине (цена)</td><td>3 из 24</td><td><b>0</b></td></tr>
+<tr><td>Ложные блокировки</td><td>-</td><td><b>0 из 98</b></td></tr>
+<tr><td>Время проверки, p95</td><td>-</td><td><b>11,8 мкс</b></td></tr>
+</tbody>
+</table>
+<p>T-lite «проверил» сам: «Покупка на 200 000 ₽ не превышает 15% портфеля (20%)». Шлюз: DENY.</p></div>
+      <span class="src">Классы атак и ошибок: вредная инструкция в новости, давление пользователя, зацикленный робот, крупная заявка в тонком стакане, ошибка лота или валюты, попытка поменять мандат</span>
+    </div>
+  </div>
+  <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">9 / 13</span></footer>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <p class="kicker">Расчёт</p>
+  <h2>Рубли в месяц на клиента</h2>
+  <p class="sub">LLM вызывается только для языка. Проверка заявки - чистый код</p>
+  <div class="c-row">
+    <div class="card tbl">
+      <table>
+        <thead><tr><th>Токены на клиента в месяц</th><th class="r">Вход</th><th class="r">Выход</th></tr></thead>
+        <tbody>
+          <tr><td>Компиляция и стресс-тест мандата: 2 версии</td><td class="r">6 000</td><td class="r">2 000</td></tr>
+          <tr><td>Объяснения решений: 40 действий агента</td><td class="r">16 000</td><td class="r">3 200</td></tr>
+          <tr><td><b>Итого</b></td><td class="r" colspan="2"><b>≈ 27 200 токенов</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div class="c-cap">₽ на клиента в месяц · цена с НДС за 1 млн токенов</div>
+      <div class="price">
+        <div class="card pt"><small>GigaChat 2 Lite</small><b>1,77 ₽</b><span>65 ₽ за 1 млн</span></div>
+        <div class="card pt"><small>GigaChat 2 Pro</small><b>13,60 ₽</b><span>500 ₽ за 1 млн</span></div>
+        <div class="card pt"><small>GigaChat 2 Max</small><b>17,68 ₽</b><span>650 ₽ за 1 млн</span></div>
+      </div>
+      <p class="plus"><b>+60,00 ₽</b> на Pro, если банк даёт и самого агента: <span class="nw">+3 000</span> токенов на событие, 40 событий</p>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="card kpi"><span class="label">Масштаб</span><h3>100 000 клиентов с агентами</h3><p>Pro - около 1,36 млн ₽ в месяц, Lite - около 177 тыс. ₽. Свои T-Pro или T-Lite оценим в MVP</p></div>
+    <div class="card kpi"><span class="label">Действия клиента</span><h3>1 подпись вместо ~30 подтверждений</h3><p>Год: 12 докупок, 6 купонов, 2 дивиденда, 4 ребаланса по 3 заявки - 32 сделки</p></div>
+    <div class="card kpi"><span class="label">Задержка</span><h3>Микросекунды на проверку</h3><p>Движок правил в памяти. Основное - запрос данных у брокера, цель p95 меньше 300 мс</p></div>
+  </div>
+  <p class="c-note">Цены GigaChat: официальная страница тарифов для юрлиц, обновлена 7.10.2026 (синхронный режим; в асинхронном вдвое дешевле). Объёмы токенов - наша оценка по длине промпта схемы и типового объяснения.</p>
+  <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">10 / 13</span></footer>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <p class="kicker">Риски</p>
+  <h2>Риски и как проверим их до разработки</h2>
+  <div class="risks">
+    <div class="card risk">
+      <div class="top"><span class="label">Спрос</span><h3>Клиенты не захотят отдавать рутину агенту</h3><p class="cons">Тогда продукта нет</p></div>
+      <div class="chk"><span class="label">Проверка</span><p>15 интервью с клиентами Т-Инвестиций и опрос по шаблонам мандатов</p><span class="bar2">Порог - треть готова попробовать</span></div>
+    </div>
+    <div class="card risk">
+      <div class="top"><span class="label">Платформа</span><h3>MCP потребует подтверждать каждую сделку</h3><p class="cons">Тогда автономия внутри мандата невозможна без доработки банка</p></div>
+      <div class="chk"><span class="label">Проверка</span><p>В песочнице смотрим, проходит ли заявка агента без подтверждения</p></div>
+    </div>
+    <div class="card risk">
+      <div class="top"><span class="label">Качество AI</span><h3>Компилятор неверно поймёт мандат</h3><p class="cons">Агент будет торговать по&nbsp;ошибочным правилам, а это прямые убытки клиента</p></div>
+      <div class="chk"><span class="label">Проверка</span><p>50 текстов с эталонной разметкой</p><span class="bar2">Порог - 95% точных совпадений</span></div>
+    </div>
+    <div class="card risk">
+      <div class="top"><span class="label">Регуляторика</span><h3>Исполнение сочтут рекомендацией или управлением</h3><p class="cons">Без лицензии это не запустить</p></div>
+      <div class="chk"><span class="label">Проверка</span><p>Разбор с юристами банка до MVP. Агент берёт бумаги только из списка клиента и по его правилу</p></div>
+    </div>
+  </div>
+  <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">11 / 13</span></footer>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <p class="kicker">План</p>
+  <h2>План MVP на 11 дней</h2>
+  <div class="s12">
+    <ol class="gantt">
+      <li><b>Д1-2</b><span class="bar"><i style="left:0;width:18.18%"></i></span><p>Шлюз на песочнице T-Invest MCP, проверка поведения подтверждений, журнал в PostgreSQL</p></li>
+      <li><b>Д3-4</b><span class="bar"><i style="left:18.18%;width:18.18%"></i></span><p>Движок правил на реальных данных: лоты, статусы, деньги, дубли; выключатель</p></li>
+      <li><b>Д5-6</b><span class="bar"><i style="left:36.36%;width:18.18%"></i></span><p>Компилятор мандата на T-Pro или GigaChat, карточка и подпись в Mini App</p></li>
+      <li><b>Д7-8</b><span class="bar"><i style="left:54.55%;width:18.18%"></i></span><p>Исполнитель поручений: реинвест, докупка по плану, ребаланс по порогам</p></li>
+      <li><b>Д9</b><span class="bar"><i style="left:72.73%;width:9.09%"></i></span><p>Бенчмарк атак против базлайна на LLM-агенте</p></li>
+      <li><b>Д10</b><span class="bar"><i style="left:81.82%;width:9.09%"></i></span><p>Replay и панель наблюдаемости для поддержки и риск-менеджмента</p></li>
+      <li><b>Д11</b><span class="bar"><i style="left:90.91%;width:9.09%"></i></span><p>Запуск одной командой, режим DEMO, репетиция демо</p></li>
+    </ol>
+    <div>
+      <div class="demo">
+        <span class="label">Демо</span>
+        <ul>
+          <li>Мандат словами</li>
+          <li>Агент сам реинвестирует купон</li>
+          <li>Атака вживую</li>
+          <li>Разбор заявки по журналу</li>
+          <li>Цифры бенчмарка</li>
+        </ul>
+      </div>
+      <div class="card links">
+        <a class="lk" href="demo.html"><small>Прототип</small><span>demo.html</span></a>
+        <a class="lk" href="index.html"><small>Сайт</small><span>index.html</span></a>
+        <a class="lk" href="https://github.com/petroreshov-droid/mandat"><small>Код</small><span>github.com/petroreshov-droid/mandat</span></a>
+      </div>
+      <span class="src">Ядро уже работает в прототипе на синтетических рыночных данных. В MVP данные и заявки идут через песочницу T-Invest MCP</span>
+    </div>
+  </div>
+  <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">12 / 13</span></footer>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <p class="kicker">Приложение</p>
+  <h2>Исследование и источники</h2>
+  <ol class="srcs">
+    <li><b>Т-Инвестиции, 16.10.2026:</b> подтверждение операций и правила нужно предусмотреть в продукте; подключение через MCP не означает запрос согласия на каждую сделку <a href="https://smart-lab.ru/company/t_invest/blog/1363508.php">smart-lab.ru/company/t_invest/blog/1363508.php</a></li>
+    <li><b>Аудит 22 интеграций ИИ-агентов с брокерами</b> (TeamTraders, данные на 23.10.2026): подтверждение в коде сервера и лимиты в коде у 1 из 17 торгующих <a href="https://smart-lab.ru/blog/1367086.php">smart-lab.ru/blog/1367086.php</a></li>
+    <li><b>Ведомости, 10.09.2026:</b> Т-Инвестиции открыли ИИ-агентам доступ к счетам <a href="https://www.vedomosti.ru/investments/articles/2026/09/10/1227646-t-investitsii-otkrili-ii-agentam-dostup-k-schetam">vedomosti.ru</a></li>
+    <li><b>R&amp;D-центр Т-Технологий, 28.04.2026:</b> языковые модели склонны соглашаться с пользователем в <span class="nw">23-50%</span> случаев <a href="https://kubnews.ru/obshchestvo/2026/04/28/rossiyskie-uchyenye-nashli-sposob-sdelat-iskusstvennyy-intellekt-menee-sklonnym-k-soglashatelstvu/">kubnews.ru</a></li>
+    <li><b>Протокол AP2</b> (Google, 16.09.2025): подписанные мандаты Intent, Cart и Payment для агентов в платежах <a href="https://www.vellum.ai/blog/googles-ap2-a-new-protocol-for-ai-agent-payments">vellum.ai</a></li>
+    <li><b>Документация T-Invest API:</b> песочница (нет купонов и дивидендов, рыночные заявки по последней цене, заявки снимаются в конце сессии) и лимиты запросов <a href="https://developer.tbank.ru/invest/intro/developer/sandbox/">developer.tbank.ru</a></li>
+    <li><b>Тарифы GigaChat API для юрлиц</b>, 7.10.2026 <a href="https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs">developers.sber.ru</a></li>
+    <li><b>Модель T-lite-it-2.1</b> (Т-Банк, Apache-2.0), на которой работает агент в бенчмарке <a href="https://huggingface.co/t-tech/T-lite-it-2.1-GGUF">huggingface.co/t-tech</a></li>
+  </ol>
+  <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">13 / 13</span></footer>
+</section>
+
+</main>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var N = slides.length;
+
+  slides.forEach(function (s, i) {
+    var n = s.querySelector('.sf-n');
+    if (n) n.textContent = (i + 1) + ' / ' + N;
+    s.setAttribute('role', 'group');
+    s.setAttribute('aria-roledescription', 'слайд');
+    s.setAttribute('aria-label', (i + 1) + ' из ' + N);
+  });
+
+  // ?print: все слайды столбиком, по одному на страницу
+  if (/(^|&)print(=|&|$)/.test(location.search.slice(1))) {
+    root.classList.add('printmode');
+    // Относительные ссылки из file:// превратились бы в PDF в локальные пути
+    if (location.protocol === 'file:') {
+      Array.prototype.forEach.call(document.querySelectorAll('a[href]'), function (a) {
+        if (!/^https?:/i.test(a.getAttribute('href'))) a.removeAttribute('href');
+      });
+    }
+    return;
+  }
+
+  root.classList.add('present');
+  var cur = -1;
+  var count = document.getElementById('count');
+
+  function clamp(i) { return Math.max(0, Math.min(N - 1, i)); }
+  function fromHash() {
+    var m = /^#(\d+)$/.exec(location.hash);
+    return m ? clamp(parseInt(m[1], 10) - 1) : 0;
+  }
+  function fit() {
+    root.style.setProperty('--s', Math.min(window.innerWidth / 1280, window.innerHeight / 720));
+  }
+  function show(i, animate) {
+    i = clamp(i);
+    if (i === cur) return;
+    if (cur >= 0) slides[cur].classList.remove('active', 'enter');
+    cur = i;
+    var s = slides[cur];
+    s.classList.add('active');
+    if (animate) { void s.offsetWidth; s.classList.add('enter'); }
+    count.textContent = (cur + 1) + ' / ' + N;
+    var h = '#' + (cur + 1);
+    if (location.hash !== h) {
+      try { history.replaceState(null, '', h); } catch (e) { location.hash = h; }
+    }
+  }
+
+  fit();
+  show(fromHash(), false);
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', function () { show(fromHash(), true); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    var k = e.key;
+    if ((k === ' ' || k === 'Enter') && e.target.closest && e.target.closest('a, button')) return;
+    var d = 0;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || (k === ' ' && !e.shiftKey)) d = 1;
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp' || (k === ' ' && e.shiftKey)) d = -1;
+    else if (k === 'Home') { e.preventDefault(); show(0, true); return; }
+    else if (k === 'End') { e.preventDefault(); show(N - 1, true); return; }
+    if (d) { e.preventDefault(); show(cur + d, true); }
+  });
+
+  document.addEventListener('click', function (e) {
+    if (e.button !== 0 || e.target.closest('a, button')) return;
+    if (String(window.getSelection ? window.getSelection() : '')) return;
+    show(cur + (e.clientX >= window.innerWidth / 2 ? 1 : -1), true);
+  });
+  document.getElementById('prev').addEventListener('click', function () { show(cur - 1, true); this.blur(); });
+  document.getElementById('next').addEventListener('click', function () { show(cur + 1, true); this.blur(); });
+
+  // Кнопки прячутся, пока мышь не двигается, чтобы не перекрывать слайд
+  var idle;
+  function wake() {
+    root.classList.remove('idle');
+    clearTimeout(idle);
+    idle = setTimeout(function () { root.classList.add('idle'); }, 2500);
+  }
+  document.addEventListener('mousemove', wake);
+  document.addEventListener('touchstart', wake, { passive: true });
+  wake();
+})();
+</script>
+</body>
+</html>

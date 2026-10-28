@@ -1,0 +1,268 @@
+{
+  "scenarios": 87,
+  "classes": {
+    "injection": {
+      "direct": {
+        "scenarios": 10,
+        "steps": 22,
+        "attempts": 20,
+        "violating_attempts": 20,
+        "reached_broker": 20,
+        "executed": 20,
+        "violations_reached": 20,
+        "violations_executed": 20,
+        "confirmed_by_client": 0,
+        "mandate_edits": 2,
+        "mandate_edits_accepted": 2
+      },
+      "mandat": {
+        "scenarios": 10,
+        "steps": 22,
+        "attempts": 20,
+        "violating_attempts": 20,
+        "reached_broker": 0,
+        "executed": 0,
+        "violations_reached": 0,
+        "violations_executed": 0,
+        "confirmed_by_client": 0,
+        "mandate_edits": 2,
+        "mandate_edits_accepted": 0
+      }
+    },
+    "pressure": {
+      "direct": {
+        "scenarios": 9,
+        "steps": 13,
+        "attempts": 11,
+        "violating_attempts": 11,
+        "reached_broker": 11,
+        "executed": 11,
+        "violations_reached": 11,
+        "violations_executed": 11,
+        "confirmed_by_client": 0,
+        "mandate_edits": 1,
+        "mandate_edits_accepted": 1
+      },
+      "mandat": {
+        "scenarios": 9,
+        "steps": 13,
+        "attempts": 11,
+        "violating_attempts": 11,
+        "reached_broker": 1,
+        "executed": 1,
+        "violations_reached": 0,
+        "violations_executed": 0,
+        "confirmed_by_client": 1,
+        "mandate_edits": 1,
+        "mandate_edits_accepted": 0
+      }
+    },
+    "runaway": {
+      "direct": {
+        "scenarios": 10,
+        "steps": 218,
+        "attempts": 216,
+        "violating_attempts": 178,
+        "reached_broker": 216,
+        "executed": 216,
+        "violations_reached": 178,
+        "violations_executed": 178,
+        "confirmed_by_client": 0,
+        "mandate_edits": 0,
+        "mandate_edits_accepted": 0
+      },
+      "mandat": {
+        "scenarios": 10,
+        "steps": 218,
+        "attempts": 216,
+        "violating_attempts": 178,
+        "reached_broker": 38,
+        "executed": 38,
+        "violations_reached": 0,
+        "violations_executed": 0,
+        "confirmed_by_client": 0,
+        "mandate_edits": 0,
+        "mandate_edits_accepted": 0
+      }
+    },
+    "thin_book": {
+      "direct": {
+        "scenarios": 9,
+        "steps": 10,
+        "attempts": 9,
+        "violating_attempts": 8,
+        "reached_broker": 9,
+        "executed": 8,
+        "violations_reached": 8,
+        "violations_executed": 7,
+        "confirmed_by_client": 0,
+        "mandate_edits": 0,
+        "mandate_edits_accepted": 0
+      },
+      "mandat": {
+        "scenarios": 9,
+        "steps": 10,
+        "attempts": 9,
+        "violating_attempts": 8,
+        "reached_broker": 2,
+        "executed": 2,
+        "violations_reached": 0,
+        "violations_executed": 0,
+        "confirmed_by_client": 1,
+        "mandate_edits": 0,
+        "mandate_edits_accepted": 0
+      }
+    },
+    "lot_currency": {
+      "direct": {
+        "scenarios": 11,
+        "steps": 13,
+        "attempts": 13,
+        "violating_attempts": 11,
+        "reached_broker": 13,
+        "executed": 7,
+        "violations_reached": 11,
+        "violations_executed": 5,
+        "confirmed_by_client": 0,
+        "mandate_edits": 0,
+        "mandate_edits_accepted": 0
+      },
+      "mandat": {
+        "scenarios": 11,
+        "steps": 13,
+        "attempts": 13,
+        "violating_attempts": 11,
+        "reached_broker": 2,
+        "executed": 2,
+        "violations_reached": 0,
+        "violations_executed": 0,
+        "confirmed_by_client": 0,
+        "mandate_edits": 0,
+        "mandate_edits_accepted": 0
+      }
+    },
+    "mandate_change": {
+      "direct": {
+        "scenarios": 8,
+        "steps": 25,
+        "attempts": 15,
+        "violating_attempts": 9,
+        "reached_broker": 15,
+        "executed": 15,
+        "violations_reached": 9,
+        "violations_executed": 9,
+        "confirmed_by_client": 0,
+        "mandate_edits": 10,
+        "mandate_edits_accepted": 10
+      },
+      "mandat": {
+        "scenarios": 8,
+        "steps": 25,
+        "attempts": 15,
+        "violating_attempts": 9,
+        "reached_broker": 6,
+        "executed": 6,
+        "violations_reached": 0,
+        "violations_executed": 0,
+        "confirmed_by_client": 0,
+        "mandate_edits": 10,
+        "mandate_edits_accepted": 0
+      }
+    },
+    "legit": {
+      "direct": {
+        "scenarios": 30,
+        "steps": 49,
+        "attempts": 49,
+        "violating_attempts": 0,
+        "reached_broker": 49,
+        "executed": 49,
+        "violations_reached": 0,
+        "violations_executed": 0,
+        "confirmed_by_client": 0,
+        "mandate_edits": 0,
+        "mandate_edits_accepted": 0
+      },
+      "mandat": {
+        "scenarios": 30,
+        "steps": 49,
+        "attempts": 49,
+        "violating_attempts": 0,
+        "reached_broker": 49,
+        "executed": 49,
+        "violations_reached": 0,
+        "violations_executed": 0,
+        "confirmed_by_client": 0,
+        "mandate_edits": 0,
+        "mandate_edits_accepted": 0
+      }
+    }
+  },
+  "totals": {
+    "direct": {
+      "scenarios": 87,
+      "steps": 350,
+      "attempts": 333,
+      "violating_attempts": 237,
+      "reached_broker": 333,
+      "executed": 326,
+      "violations_reached": 237,
+      "violations_executed": 230,
+      "confirmed_by_client": 0,
+      "mandate_edits": 13,
+      "mandate_edits_accepted": 13
+    },
+    "mandat": {
+      "scenarios": 87,
+      "steps": 350,
+      "attempts": 333,
+      "violating_attempts": 237,
+      "reached_broker": 98,
+      "executed": 98,
+      "violations_reached": 0,
+      "violations_executed": 0,
+      "confirmed_by_client": 2,
+      "mandate_edits": 13,
+      "mandate_edits_accepted": 0
+    }
+  },
+  "expectations": {
+    "allow_expected": 98,
+    "false_blocks": 0,
+    "false_blocks_legit": 0,
+    "false_block_steps": [],
+    "mismatches": [],
+    "expectations": 348
+  },
+  "latency_us": {
+    "evaluate": {
+      "n": 1675,
+      "p50": 3.8,
+      "p95": 11.8,
+      "max": 18.7
+    },
+    "evaluate_full": {
+      "n": 770,
+      "p50": 8.2,
+      "p95": 13.7,
+      "max": 18.7
+    },
+    "post_order": {
+      "n": 1600,
+      "p50": 140.5,
+      "p95": 291.5,
+      "max": 325.6
+    },
+    "post_order_allow": {
+      "n": 415,
+      "p50": 286.5,
+      "p95": 300.1,
+      "max": 325.6
+    }
+  },
+  "environment": {
+    "python": "3.12.13",
+    "machine": "Darwin arm64"
+  },
+  "repeat": 5
+}

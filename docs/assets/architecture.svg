@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" width="1200" height="660" role="img" aria-labelledby="t d">
+  <title id="t">Архитектура «Мандата»</title>
+  <desc id="d">Любой ИИ-агент подключается к шлюзу «Мандат» по MCP. Шлюз проверяет каждое действие агента кодом по подписанному мандату клиента и только потом передаёт заявку в T-Invest MCP. Решения пишутся в журнал с цепочкой хешей.</desc>
+  <style>
+    :root { --bg:#ffffff; --panel:#f6f7fb; --line:#cfd5e3; --ink:#0f172a; --muted:#516079; --accent:#4f46e5; --accent-soft:#eef0ff; --ok:#0f8a5f; --ok-soft:#e6f6ef; --ask:#a15c00; --ask-soft:#fff4e0; --deny:#c0262d; --deny-soft:#fdecec; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#0b1020; --panel:#121933; --line:#2b3658; --ink:#e7ecf7; --muted:#9aa6c2; --accent:#8b8cff; --accent-soft:#1c2150; --ok:#34d399; --ok-soft:#0f2a22; --ask:#fbbf24; --ask-soft:#2c2410; --deny:#f87171; --deny-soft:#2e1416; }
+    }
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); }
+    .bg { fill: var(--bg); }
+    .box { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
+    .gw { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+    .inner { fill: var(--bg); stroke: var(--line); stroke-width: 1.2; }
+    .h { font-size: 17px; font-weight: 700; }
+    .h2 { font-size: 15px; font-weight: 650; }
+    .s { font-size: 12.5px; fill: var(--muted); }
+    .tag { font-size: 11.5px; font-weight: 600; fill: var(--accent); letter-spacing: .04em; }
+    .arrow { stroke: var(--muted); stroke-width: 1.8; fill: none; marker-end: url(#a); }
+    .arrow.acc { stroke: var(--accent); marker-end: url(#aa); }
+    .lbl { font-size: 12px; fill: var(--muted); font-weight: 600; }
+    .pill-ok { fill: var(--ok-soft); stroke: var(--ok); }
+    .pill-ask { fill: var(--ask-soft); stroke: var(--ask); }
+    .pill-deny { fill: var(--deny-soft); stroke: var(--deny); }
+    .pt-ok { fill: var(--ok); font-size: 12.5px; font-weight: 700; }
+    .pt-ask { fill: var(--ask); font-size: 12.5px; font-weight: 700; }
+    .pt-deny { fill: var(--deny); font-size: 12.5px; font-weight: 700; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7b88a6"/></marker>
+    <marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6366f1"/></marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1200" height="660" rx="18"/>
+
+  <!-- Левая колонка -->
+  <rect class="box" x="24" y="40" width="256" height="118" rx="14"/>
+  <text class="tag" x="44" y="66">ЛЮБОЙ ИИ-АГЕНТ</text>
+  <text class="h" x="44" y="92">Агент клиента или банка</text>
+  <text class="s" x="44" y="116">Claude, GigaChat, T-Pro,</text>
+  <text class="s" x="44" y="134">робот на n8n или свой код</text>
+
+  <rect class="box" x="24" y="214" width="256" height="138" rx="14"/>
+  <text class="tag" x="44" y="240">КЛИЕНТ</text>
+  <text class="h" x="44" y="266">Telegram Mini App</text>
+  <text class="s" x="44" y="290">мандат своими словами,</text>
+  <text class="s" x="44" y="308">подтверждения, журнал,</text>
+  <text class="s" x="44" y="326">выключатель агента</text>
+
+  <rect class="box" x="24" y="408" width="256" height="150" rx="14"/>
+  <text class="tag" x="44" y="434">LLM ТОЛЬКО ДЛЯ ЯЗЫКА</text>
+  <text class="h" x="44" y="460">Компилятор мандата</text>
+  <text class="s" x="44" y="484">T-Pro / GigaChat: текст в правила</text>
+  <text class="s" x="44" y="502">по JSON-схеме, стресс-тест,</text>
+  <text class="s" x="44" y="520">уточняющие вопросы,</text>
+  <text class="s" x="44" y="538">объяснения простыми словами</text>
+
+  <!-- Шлюз -->
+  <rect class="gw" x="368" y="24" width="480" height="612" rx="20"/>
+  <text class="tag" x="390" y="52">ШЛЮЗ «МАНДАТ» - MCP-ПРОКСИ</text>
+
+  <rect class="inner" x="390" y="66" width="436" height="70" rx="12"/>
+  <text class="h2" x="408" y="94">MCP-сервер для агента</text>
+  <text class="s" x="408" y="116">те же инструменты брокера: портфель, стакан, заявка</text>
+
+  <rect class="inner" x="390" y="152" width="436" height="200" rx="12"/>
+  <text class="h2" x="408" y="180">Движок правил - код, а не модель</text>
+  <text class="s" x="408" y="202">19 проверок на каждое действие: список бумаг, класс,</text>
+  <text class="s" x="408" y="220">валюта, лот, цена против рынка, деньги без плеча, доля,</text>
+  <text class="s" x="408" y="238">размер и дневной оборот, стакан, частота, дубли, пауза</text>
+  <rect class="pill-ok" x="408" y="262" width="128" height="34" rx="17"/>
+  <text class="pt-ok" x="472" y="284" text-anchor="middle">ALLOW - сам</text>
+  <rect class="pill-ask" x="544" y="262" width="134" height="34" rx="17"/>
+  <text class="pt-ask" x="611" y="284" text-anchor="middle">ASK - клиенту</text>
+  <rect class="pill-deny" x="686" y="262" width="124" height="34" rx="17"/>
+  <text class="pt-deny" x="748" y="284" text-anchor="middle">DENY - отказ</text>
+  <text class="s" x="408" y="330">подписанный мандат: JSON mandat/v1 + SHA-256</text>
+
+  <rect class="inner" x="390" y="368" width="436" height="74" rx="12"/>
+  <text class="h2" x="408" y="396">Исполнитель поручений</text>
+  <text class="s" x="408" y="418">купон - реинвест, 10-е число - докупка, порог - ребаланс</text>
+
+  <rect class="inner" x="390" y="458" width="436" height="86" rx="12"/>
+  <text class="h2" x="408" y="486">Журнал доказательств</text>
+  <text class="s" x="408" y="508">поручение - данные - решение - проверка - заявка</text>
+  <text class="s" x="408" y="526">цепочка SHA-256, replay любого решения</text>
+
+  <rect class="inner" x="390" y="560" width="210" height="58" rx="12"/>
+  <text class="h2" x="408" y="586">Выключатель</text>
+  <text class="s" x="408" y="606">пауза после серии нарушений</text>
+  <rect class="inner" x="616" y="560" width="210" height="58" rx="12"/>
+  <text class="h2" x="634" y="586">Наблюдаемость</text>
+  <text class="s" x="634" y="606">метрики и задержка</text>
+
+  <!-- Правая колонка -->
+  <rect class="box" x="920" y="40" width="256" height="150" rx="14"/>
+  <text class="tag" x="940" y="66">БРОКЕР</text>
+  <text class="h" x="940" y="92">T-Invest MCP и API</text>
+  <text class="s" x="940" y="116">песочница, потом бой:</text>
+  <text class="s" x="940" y="134">портфель, операции, стакан,</text>
+  <text class="s" x="940" y="152">статус торгов, справочник,</text>
+  <text class="s" x="940" y="170">выставление заявок</text>
+
+  <rect class="box" x="920" y="246" width="256" height="118" rx="14"/>
+  <text class="tag" x="940" y="272">ХРАНИЛИЩЕ</text>
+  <text class="h" x="940" y="298">PostgreSQL + pgvector</text>
+  <text class="s" x="940" y="322">версии мандатов, журнал,</text>
+  <text class="s" x="940" y="340">счётчики, справочник бумаг</text>
+
+  <rect class="box" x="920" y="420" width="256" height="138" rx="14"/>
+  <text class="tag" x="940" y="446">БАНК</text>
+  <text class="h" x="940" y="472">Поддержка и риск</text>
+  <text class="s" x="940" y="496">разбор спорной сделки</text>
+  <text class="s" x="940" y="514">по журналу, метрики</text>
+  <text class="s" x="940" y="532">агентов по всем клиентам</text>
+
+  <!-- Стрелки -->
+  <path class="arrow acc" d="M280 100 L366 100"/>
+  <text class="lbl" x="298" y="90">MCP</text>
+  <path class="arrow" d="M282 270 L366 270"/>
+  <text class="lbl" x="290" y="258">мандат</text>
+  <path class="arrow" d="M366 300 L282 300"/>
+  <text class="lbl" x="288" y="320">«ждёт вас»</text>
+  <path class="arrow" d="M152 352 L152 406"/>
+  <path class="arrow acc" d="M280 470 C 330 470, 336 330, 388 330"/>
+  <text class="lbl" x="288" y="500">правила</text>
+  <path class="arrow acc" d="M848 100 L918 100"/>
+  <text class="lbl" x="856" y="90">ALLOW</text>
+  <path class="arrow" d="M918 150 L850 150"/>
+  <text class="lbl" x="856" y="170">данные</text>
+  <path class="arrow" d="M848 500 C 884 500, 884 305, 918 305"/>
+  <path class="arrow" d="M848 520 C 890 520, 890 490, 918 490"/>
+</svg>
