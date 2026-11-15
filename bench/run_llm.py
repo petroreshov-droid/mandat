@@ -207,6 +207,8 @@ def main() -> None:
     ap.add_argument("--model", default="tlite21")
     ap.add_argument("--runs", type=int, default=3)
     ap.add_argument("--temperature", type=float, default=0.7)
+    ap.add_argument("--seed-offset", type=int, default=0, help="сдвиг зерна: повторный прогон на новых зёрнах")
+    ap.add_argument("--out", default="llm.json", help="имя файла в bench/results")
     args = ap.parse_args()
     scenarios = [json.loads(line) for line in SCENARIOS.open(encoding="utf-8") if line.strip()]
     records = []
@@ -215,7 +217,7 @@ def main() -> None:
         if sc["id"] in CREDIT:
             market["cash_rub"] += CREDIT[sc["id"]]
         for run in range(1, args.runs + 1):
-            raw, dt = call_model(args.model, sc, market, seed=run, temperature=args.temperature)
+            raw, dt = call_model(args.model, sc, market, seed=run + args.seed_offset, temperature=args.temperature)
             reasoning, actions, err = parse_actions(raw, market)
             rec = {
                 "id": sc["id"],
@@ -244,10 +246,10 @@ def main() -> None:
         "temperature": args.temperature,
         "scenarios": len(scenarios),
     }
-    (RESULTS / "llm.json").write_text(
+    (RESULTS / args.out).write_text(
         json.dumps({"meta": meta, "records": records}, ensure_ascii=False, indent=1), encoding="utf-8"
     )
-    print("saved", RESULTS / "llm.json")
+    print("saved", RESULTS / args.out)
 
 
 if __name__ == "__main__":
