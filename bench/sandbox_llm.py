@@ -24,6 +24,8 @@ from mandat.brokers.tinvest_mcp import SANDBOX_URL, TInvestMcpBroker, TInvestMcp
 RESULTS = Path(__file__).parent / "results"
 MARKET_PROBE = ["SBER_TQBR", "SU26238RMFS4_TQOB"]  # сценарии покупают акции и ОФЗ: нужны торги по обоим
 WAIT_SECONDS = 600
+ATTEMPTS = 4  # сбой банка (INTERNAL, сеть): столько попыток на сценарий
+RETRY_WAIT = 300
 
 
 def wait_for_trading(client: TInvestMcpClient) -> None:
@@ -111,40 +113,47 @@ def run(
         for run_no in range(1, runs + 1):
             if (sc["id"], run_no) in finished:  # продолжение прерванного прогона
                 continue
-            wait_for_trading(client)
-            accounts = Accounts(client)
-            try:
-                via, direct = accounts.new(), accounts.new()
-                market = via.snapshot()
-                books = {t: market["books"].get(t) for t in market["instruments"]}
-                books = {t: b for t, b in books.items() if b and b.get("asks")}  # пустой стакан (TMOS) - без цены
-                prompt_market = {**market, "books": books}
-                if sc["id"] in CREDIT:
-                    prompt_market["cash_rub"] += CREDIT[sc["id"]]
-                raw, dt = call_model(model, sc, prompt_market, seed=run_no, temperature=temperature, system=system)
-                reasoning, actions, err = parse_actions(raw, prompt_market)
-                rec = {
-                    "id": sc["id"],
-                    "class": sc["class"],
-                    "run": run_no,
-                    "llm_seconds": round(dt, 1),
-                    "parse_error": err,
-                    "reasoning": reasoning,
-                    "actions": actions,
-                    "raw": raw[:1500],
-                    "mandat": execute(actions, "mandat", sc["id"], broker=via, mandate=mandate),
-                    "direct": execute(actions, "direct", sc["id"], broker=direct, mandate=mandate),
-                }
-            except Exception as exc:
-                if "HTTP 401" in str(exc):
-                    raise SystemExit(
-                        "Песочница не принимает токен (HTTP 401): прогон остановлен, продолжить --resume"
-                    ) from exc
-                failures.append({"id": sc["id"], "run": run_no, "error": f"{type(exc).__name__}: {exc}"[:300]})
-                print(f"{sc['id']} r{run_no} СБОЙ: {failures[-1]['error'][:120]}", flush=True)
+            rec = None
+            for attempt in range(1, ATTEMPTS + 1):
+                wait_for_trading(client)
+                accounts = Accounts(client)
+                try:
+                    via, direct = accounts.new(), accounts.new()
+                    market = via.snapshot()
+                    books = {t: market["books"].get(t) for t in market["instruments"]}
+                    books = {t: b for t, b in books.items() if b and b.get("asks")}  # пустой стакан (TMOS) - без цены
+                    prompt_market = {**market, "books": books}
+                    if sc["id"] in CREDIT:
+                        prompt_market["cash_rub"] += CREDIT[sc["id"]]
+                    raw, dt = call_model(model, sc, prompt_market, seed=run_no, temperature=temperature, system=system)
+                    reasoning, actions, err = parse_actions(raw, prompt_market)
+                    rec = {
+                        "id": sc["id"],
+                        "class": sc["class"],
+                        "run": run_no,
+                        "llm_seconds": round(dt, 1),
+                        "parse_error": err,
+                        "reasoning": reasoning,
+                        "actions": actions,
+                        "raw": raw[:1500],
+                        "mandat": execute(actions, "mandat", sc["id"], broker=via, mandate=mandate),
+                        "direct": execute(actions, "direct", sc["id"], broker=direct, mandate=mandate),
+                    }
+                    break
+                except Exception as exc:
+                    if "HTTP 401" in str(exc):
+                        raise SystemExit(
+                            "Песочница не принимает токен (HTTP 401): прогон остановлен, продолжить --resume"
+                        ) from exc
+                    error = f"{type(exc).__name__}: {exc}"[:300]
+                    print(f"{sc['id']} r{run_no} сбой, попытка {attempt} из {ATTEMPTS}: {error[:110]}", flush=True)
+                    if attempt < ATTEMPTS:
+                        time.sleep(RETRY_WAIT)
+                finally:
+                    accounts.close_all()
+            if rec is None:
+                failures.append({"id": sc["id"], "run": run_no, "error": error})
                 continue
-            finally:
-                accounts.close_all()
             records.append(rec)
             if save:
                 save({"meta": meta, "records": records, "failures": failures})
