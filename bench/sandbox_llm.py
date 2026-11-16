@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,22 @@ from bench.summarize_llm import summarize, to_markdown
 from mandat.brokers.tinvest_mcp import SANDBOX_URL, TInvestMcpBroker, TInvestMcpClient
 
 RESULTS = Path(__file__).parent / "results"
+MARKET_PROBE = ["SBER_TQBR", "SU26238RMFS4_TQOB"]  # сценарии покупают акции и ОФЗ: нужны торги по обоим
+WAIT_SECONDS = 600
+
+
+def wait_for_trading(client: TInvestMcpClient) -> None:
+    """Ждать, пока биржа принимает лимитные заявки по акциям и ОФЗ: иначе прогон меряет закрытый рынок."""
+    while True:
+        try:
+            st = client.call("invest_get_trading_statuses", {"instrumentId": MARKET_PROBE}) or {}
+            flags = [s.get("limitOrderAvailableFlag") for s in st.get("tradingStatuses", [])]
+            if len(flags) == len(MARKET_PROBE) and all(flags):
+                return
+            print(time.strftime("%H:%M"), "торги по акциям и ОФЗ не идут, жду", flush=True)
+        except Exception as exc:  # noqa: BLE001 - сбой связи: подождать и спросить снова
+            print(time.strftime("%H:%M"), "статус торгов недоступен:", type(exc).__name__, flush=True)
+        time.sleep(WAIT_SECONDS)
 
 
 def sandbox_system() -> str:
@@ -94,6 +111,7 @@ def run(
         for run_no in range(1, runs + 1):
             if (sc["id"], run_no) in finished:  # продолжение прерванного прогона
                 continue
+            wait_for_trading(client)
             accounts = Accounts(client)
             try:
                 via, direct = accounts.new(), accounts.new()
@@ -117,7 +135,11 @@ def run(
                     "mandat": execute(actions, "mandat", sc["id"], broker=via, mandate=mandate),
                     "direct": execute(actions, "direct", sc["id"], broker=direct, mandate=mandate),
                 }
-            except Exception as exc:  # noqa: BLE001 - сбой песочницы не должен обнулять весь прогон
+            except Exception as exc:
+                if "HTTP 401" in str(exc):
+                    raise SystemExit(
+                        "Песочница не принимает токен (HTTP 401): прогон остановлен, продолжить --resume"
+                    ) from exc
                 failures.append({"id": sc["id"], "run": run_no, "error": f"{type(exc).__name__}: {exc}"[:300]})
                 print(f"{sc['id']} r{run_no} СБОЙ: {failures[-1]['error'][:120]}", flush=True)
                 continue
