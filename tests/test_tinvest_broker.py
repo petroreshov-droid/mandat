@@ -351,3 +351,48 @@ def test_listed_ticker_unknown_to_the_bank_is_skipped_but_a_held_one_stops_the_c
     server.securities.append({"ticker": "XXXX", "classCode": "TQBR", "balance": "1"})
     with pytest.raises(BrokerError):
         b.snapshot()
+
+
+def test_focus_book_comes_in_the_first_round_and_is_not_refetched():
+    b, server = broker()
+    m = b.snapshot(focus="SBER")
+    assert names(server).count("invest_get_orderbook") == 1
+    assert m["books"]["SBER"]["asks"][0] == [296.0, 369.0]
+    assert names(server).count("invest_get_orderbook") == 1
+
+
+def test_off_list_ticker_reaches_the_client_question_without_warmup():
+    gw, server = gateway()
+    res = gw.post_order("GAZP", "buy", 10, 120.5, order_id="g1")
+    assert res["decision"] == "ASK"  # демо-мандат: вне списка - спросить клиента, а не «нет такой бумаги»
+    assert any(c["code"] == "WHITELIST" and not c["ok"] for c in res["checks"])
+    assert "invest_create_order" not in names(server)
+
+
+class FlakyTInvest(FakeTInvest):
+    """Первый вызов каждого инструмента падает по сети."""
+
+    def __init__(self):
+        super().__init__()
+        self.failed = set()
+
+    def __call__(self, url, headers, body):
+        msg = json.loads(body)
+        if msg.get("method") == "tools/call":
+            name = msg["params"]["name"]
+            if name not in self.failed:
+                self.failed.add(name)
+                self.calls.append((name, msg["params"]["arguments"]))
+                raise BrokerError("T-Invest MCP недоступен: URLError")
+        return super().__call__(url, headers, body)
+
+
+def test_reads_are_retried_after_a_network_blip_but_orders_are_not(monkeypatch):
+    monkeypatch.setattr("mandat.brokers.tinvest_mcp.RETRY_PAUSE", 0)
+    server = FlakyTInvest()
+    b, _ = broker(server)
+    m = b.snapshot(focus="SBER")
+    assert m["cash_rub"] == 1_000_000 and m["books"]["SBER"]["asks"]
+    with pytest.raises(BrokerError, match="недоступен"):
+        b.place_order({"ticker": "SBER", "side": "buy", "quantity": 1, "price": 296.0})
+    assert names(server).count("invest_create_order") == 1  # повтор заявки купил бы второй раз

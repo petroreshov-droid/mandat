@@ -21,7 +21,7 @@ class MockBroker(Broker):
         self._counter = 0
         self.orders: list[dict[str, Any]] = []  # все ответы брокера, в порядке поступления
 
-    def snapshot(self) -> dict[str, Any]:
+    def snapshot(self, focus: str | None = None) -> dict[str, Any]:  # noqa: ARG002 - рынок в памяти и так весь
         return copy.deepcopy(self._market)
 
     def credit_cash(self, amount: float) -> None:

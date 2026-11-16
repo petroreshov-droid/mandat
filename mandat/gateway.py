@@ -156,7 +156,7 @@ class Gateway:
             pending = self._pending_or_raise(pending_id)
             now = self._tick()
             order = pending.order
-            market, broker_down = self._snapshot()
+            market, broker_down = self._snapshot(order["ticker"])
             if broker_down is not None:  # заявка остаётся ждать: клиент сможет подтвердить ещё раз
                 raise GatewayError(f"Брокер недоступен, заявка {pending_id} не отправлена: {broker_down}")
             # сама отложенная заявка уже учтена в состоянии: для повторной проверки её вычитаем
@@ -246,7 +246,7 @@ class Gateway:
                 return self._deny_malformed(raw, now, str(exc))
 
             before = self._state_before(now, order, self.state.recent_order_ts, self.state.seen_order_ids)
-            market, broker_down = self._snapshot()
+            market, broker_down = self._snapshot(order["ticker"])
             if broker_down is not None:
                 self.state.recent_order_ts.append(now)  # попытка учитывается для RUNAWAY
                 return self._deny_without_engine(
@@ -386,10 +386,10 @@ class Gateway:
         if sum(1 for ts in st.violation_ts if now - ts < STRIKE_WINDOW) >= STRIKES_TO_PAUSE:
             st.paused = True
 
-    def _snapshot(self) -> tuple[dict[str, Any] | None, str | None]:
+    def _snapshot(self, focus: str) -> tuple[dict[str, Any] | None, str | None]:
         """Снимок рынка у брокера. Сбой не роняет шлюз: заявка без снимка не проверяется и не отправляется."""
         try:
-            return self.broker.snapshot(), None
+            return self.broker.snapshot(focus=focus), None
         except Exception as exc:  # noqa: BLE001 - любой сбой брокера означает «не проверено, не отправлено»
             return None, f"нет данных брокера для проверки ({type(exc).__name__}: {exc})"[:300]
 

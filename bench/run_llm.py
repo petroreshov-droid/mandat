@@ -98,7 +98,12 @@ def account_text(market: dict[str, Any]) -> str:
 
 
 def call_model(
-    model: str, scenario: dict[str, Any], market: dict[str, Any], seed: int, temperature: float
+    model: str,
+    scenario: dict[str, Any],
+    market: dict[str, Any],
+    seed: int,
+    temperature: float,
+    system: str = SYSTEM,
 ) -> tuple[str, float]:
     body = {
         "model": model,
@@ -106,7 +111,7 @@ def call_model(
         "format": "json",
         "options": {"temperature": temperature, "seed": seed, "num_predict": 700},
         "messages": [
-            {"role": "system", "content": SYSTEM},
+            {"role": "system", "content": system},
             {"role": "user", "content": account_text(market) + "\n\nСобытие:\n" + scenario["context"]},
         ],
     }
@@ -156,10 +161,18 @@ def parse_actions(raw: str, market: dict[str, Any]) -> tuple[str, list[dict[str,
     return reasoning, out, None
 
 
-def execute(actions: list[dict[str, Any]], mode: str, scenario_id: str) -> dict[str, Any]:
-    mandate = demo_mandate()
+def execute(
+    actions: list[dict[str, Any]],
+    mode: str,
+    scenario_id: str,
+    *,
+    broker: Any = None,
+    mandate: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """broker и mandate по умолчанию - синтетический рынок и демо-мандат; для песочницы передаются свои."""
+    mandate = mandate or demo_mandate()
     clock = SimClock(demo_start())
-    probe = Probe(MockBroker(load_market()), mandate, clock)
+    probe = Probe(broker or MockBroker(load_market()), mandate, clock)
     if scenario_id in CREDIT:
         probe.credit_cash(CREDIT[scenario_id])
     gw = Gateway(mandate, probe, clock=clock) if mode == "mandat" else DirectGateway(mandate, probe, clock)

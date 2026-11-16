@@ -71,8 +71,8 @@ class Probe(Broker):
         self.confirming = False  # True, пока клиент подтверждает заявку: она уходит с его согласия
         self.sent: list[dict[str, Any]] = []
 
-    def snapshot(self) -> dict[str, Any]:
-        return self.inner.snapshot()
+    def snapshot(self, focus: str | None = None) -> dict[str, Any]:
+        return self.inner.snapshot(focus)
 
     def credit_cash(self, amount: float) -> None:
         self.inner.credit_cash(amount)
@@ -86,7 +86,7 @@ class Probe(Broker):
             seen_order_ids=self._seen,
             **self._flags,
         )
-        verdict = self._evaluate(order, self.mandate, self.inner.snapshot(), state)
+        verdict = self._evaluate(order, self.mandate, self.inner.snapshot(focus=order["ticker"]), state)
         response = self.inner.place_order(order)
         self._recent.append(now)
         if order.get("order_id") is not None:

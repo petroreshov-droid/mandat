@@ -61,6 +61,8 @@ FX_INSTRUMENTS = {
     "hkd": "HKDRUB_TOM_CETS",
 }
 MAX_PARALLEL = 8  # одновременных вызовов MCP при снятии снимка
+READ_ATTEMPTS = 3  # чтение данных при сетевом сбое: всего попыток
+RETRY_PAUSE = 0.3  # секунд перед повтором, растёт с номером попытки
 ORDER_STATUS = {
     "EXECUTION_REPORT_STATUS_FILL": "filled",
     "EXECUTION_REPORT_STATUS_PARTIALLYFILL": "partial",
@@ -263,12 +265,20 @@ class TInvestMcpBroker(Broker):
     # --- вызовы MCP ---
 
     def _call(self, key: str, args: dict[str, Any]) -> Any:
-        started = time.perf_counter()
-        try:
-            return self.client.call(self.tools[key], args)
-        finally:
-            ended = time.perf_counter()
-            self.calls.append((self.tools[key], (ended - started) * 1000, started, ended))
+        """Чтение при сбое сети повторяется; заявка - никогда: у банка нет ключа идемпотентности, повтор = вторая сделка."""
+        attempts = 1 if key == "post_order" else READ_ATTEMPTS
+        for attempt in range(1, attempts + 1):
+            started = time.perf_counter()
+            try:
+                return self.client.call(self.tools[key], args)
+            except BrokerError as exc:
+                if attempt == attempts or "недоступен" not in str(exc):
+                    raise
+                time.sleep(RETRY_PAUSE * attempt)
+            finally:
+                ended = time.perf_counter()
+                self.calls.append((self.tools[key], (ended - started) * 1000, started, ended))
+        raise AssertionError("недостижимо")
 
     def _resolve(self, ticker: str) -> str:
         """Тикер -> TICKER_CLASSCODE: из universe, иначе поиск, основной режим торгов с доступом через API."""
@@ -310,11 +320,14 @@ class TInvestMcpBroker(Broker):
 
     # --- интерфейс Broker ---
 
-    def snapshot(self) -> dict[str, Any]:
-        """Позиции, статусы торгов и цены запрашиваются одновременно: задержка снимка - самый медленный вызов."""
+    def snapshot(self, focus: str | None = None) -> dict[str, Any]:
+        """Позиции, статусы торгов, цены и стакан бумаги из заявки (focus) запрашиваются одновременно:
+        задержка снимка - самый медленный вызов, а не их сумма."""
         with ThreadPoolExecutor(max_workers=MAX_PARALLEL) as pool:
             fut_positions = pool.submit(self._call, "positions", {"accountId": self.account_id})
-            instruments = self._load_cards(pool, list(self.universe), held=set())
+            fut_book = pool.submit(self._focus_book, focus) if focus else None
+            wanted = list(dict.fromkeys([*self.universe, *([focus] if focus else [])]))
+            instruments = self._load_cards(pool, wanted, held=set())
             fut_market = pool.submit(self._market, instruments)
             positions_raw = fut_positions.result() or {}
             cash = sum(
@@ -335,15 +348,26 @@ class TInvestMcpBroker(Broker):
                 more = self._load_cards(pool, extra, held=set(extra))
                 self._market(more)
                 instruments.update(more)
+            focus_book = fut_book.result() if fut_book else None
         currencies = {i["currency"] for i in instruments.values()} - {"rub"}
+        books = _LazyBooks(self, instruments)
+        if focus_book is not None and focus in instruments:
+            dict.__setitem__(books, focus, focus_book)
         return {
             "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
             "fx": {"rub": 1.0, **self._fx(currencies)},
             "cash_rub": cash,
             "instruments": instruments,
             "positions": positions,
-            "books": _LazyBooks(self, instruments),
+            "books": books,
         }
+
+    def _focus_book(self, ticker: str) -> dict[str, list[list[float]]] | None:
+        """Стакан бумаги из заявки - в первом круге. Не вышло - стакан запросится позже по требованию."""
+        try:
+            return self.orderbook(ticker, self._card(ticker))
+        except BrokerError:
+            return None
 
     def _load_cards(self, pool: ThreadPoolExecutor, tickers: list[str], held: set[str]) -> dict[str, dict[str, Any]]:
         """Карточки из кеша, недостающие - параллельно. Бумагу из списка клиента, которой нет у брокера, пропускаем."""
