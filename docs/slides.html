@@ -497,20 +497,20 @@ h1 { margin: 34px 0 0; font-size: 140px; line-height: .92; font-weight: 800; let
         <div class="thr">
           <div><b>0</b><span><strong>нарушений мандата у брокера</strong> без подтверждения клиента, порог для жёстких правил</span></div>
           <div><b>&lt; 5%</b><span><strong>ложных блокировок</strong> законных операций, <span class="nw">провал - больше 10%</span></span></div>
-          <div><b>&lt; 300 мс</b><span><strong>добавленная задержка p95</strong> вместе с запросом данных у брокера</span></div>
+          <div><b>&lt; 1 с</b><span><strong>добавленная задержка p95</strong> вместе с запросом данных у брокера</span></div>
         </div>
       </div>
     </div>
     <div class="res">
-      <span class="label">Результаты прототипа</span>
+      <span class="label">Результаты стенда и песочницы банка</span>
       <div class="bench" id="bench-slide"><!--BENCH_SLIDE--><table>
 <thead><tr><th></th><th>Без шлюза</th><th>Через Мандат</th></tr></thead>
 <tbody>
 <tr><td>Скриптовые атаки у брокера</td><td>237 из 333</td><td><b>0</b></td></tr>
-<tr><td>T-lite-it-2.1 вышел за мандат</td><td>12 из 72</td><td><b>0</b></td></tr>
-<tr><td>Ошибки T-lite в рутине (цена)</td><td>3 из 24</td><td><b>0</b></td></tr>
+<tr><td>T-lite-it-2.1 вышел за мандат</td><td>37 из 240</td><td><b>0</b></td></tr>
+<tr><td>Ошибки T-lite в рутине (цена)</td><td>5 из 80</td><td><b>0</b></td></tr>
 <tr><td>Ложные блокировки</td><td>-</td><td><b>0 из 98</b></td></tr>
-<tr><td>Время проверки, p95</td><td>-</td><td><b>11,8 мкс</b></td></tr>
+<tr><td>Песочница T-Invest MCP: нарушения, принятые банком</td><td>6 из 7</td><td><b>0</b></td></tr>
 </tbody>
 </table>
 <p>T-lite «проверил» сам: «Покупка на 200 000 ₽ не превышает 15% портфеля (20%)». Шлюз: DENY.</p></div>
@@ -549,7 +549,7 @@ h1 { margin: 34px 0 0; font-size: 140px; line-height: .92; font-weight: 800; let
   <div class="kpis">
     <div class="card kpi"><span class="label">Масштаб</span><h3>100 000 клиентов с агентами</h3><p>Pro - около 1,36 млн ₽ в месяц, Lite - около 177 тыс. ₽. Свои T-Pro или T-Lite оценим в MVP</p></div>
     <div class="card kpi"><span class="label">Действия клиента</span><h3>1 подпись вместо ~30 подтверждений</h3><p>Год: 12 докупок, 6 купонов, 2 дивиденда, 4 ребаланса по 3 заявки - 32 сделки</p></div>
-    <div class="card kpi"><span class="label">Задержка</span><h3>Микросекунды на проверку</h3><p>Движок правил в памяти. Основное - запрос данных у брокера, цель p95 меньше 300 мс</p></div>
+    <div class="card kpi"><span class="label">Задержка</span><h3>Микросекунды на проверку</h3><p>Движок правил в памяти. На песочнице ответ шлюза - медиана около 1 с, почти всё - ответы MCP</p></div>
   </div>
   <p class="c-note">Цены GigaChat: официальная страница тарифов для юрлиц, обновлена 7.10.2026 (синхронный режим; в асинхронном вдвое дешевле). Объёмы токенов - наша оценка по длине промпта схемы и типового объяснения.</p>
   <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">10 / 13</span></footer>
@@ -565,8 +565,8 @@ h1 { margin: 34px 0 0; font-size: 140px; line-height: .92; font-weight: 800; let
       <div class="chk"><span class="label">Проверка</span><p>15 интервью с клиентами Т-Инвестиций и опрос по шаблонам мандатов</p><span class="bar2">Порог - треть готова попробовать</span></div>
     </div>
     <div class="card risk">
-      <div class="top"><span class="label">Платформа</span><h3>MCP потребует подтверждать каждую сделку</h3><p class="cons">Тогда автономия внутри мандата невозможна без доработки банка</p></div>
-      <div class="chk"><span class="label">Проверка</span><p>В песочнице смотрим, проходит ли заявка агента без подтверждения</p></div>
+      <div class="top"><span class="label">Платформа</span><h3>Проверено: MCP не подтверждает сделки</h3><p class="cons">Заявка агента исполняется сразу, повтор вызова - вторая сделка</p></div>
+      <div class="chk"><span class="label">Проверка</span><p>Песочница 16.11: FILL за 0,75 с без вопросов клиенту; через Мандат 0 нарушений из 7</p></div>
     </div>
     <div class="card risk">
       <div class="top"><span class="label">Качество AI</span><h3>Компилятор неверно поймёт мандат</h3><p class="cons">Агент будет торговать по&nbsp;ошибочным правилам, а это прямые убытки клиента</p></div>
@@ -586,7 +586,7 @@ h1 { margin: 34px 0 0; font-size: 140px; line-height: .92; font-weight: 800; let
   <h2>План MVP на 11 дней</h2>
   <div class="s12">
     <ol class="gantt">
-      <li><b>Д1-2</b><span class="bar"><i style="left:0;width:18.18%"></i></span><p>Шлюз на песочнице T-Invest MCP, проверка поведения подтверждений, журнал в PostgreSQL</p></li>
+      <li><b>Д1-2</b><span class="bar"><i style="left:0;width:18.18%"></i></span><p>Агент через шлюз на песочнице T-Invest MCP (адаптер работает с 16.11), журнал в PostgreSQL</p></li>
       <li><b>Д3-4</b><span class="bar"><i style="left:18.18%;width:18.18%"></i></span><p>Движок правил на реальных данных: лоты, статусы, деньги, дубли; выключатель</p></li>
       <li><b>Д5-6</b><span class="bar"><i style="left:36.36%;width:18.18%"></i></span><p>Компилятор мандата на T-Pro или GigaChat, карточка и подпись в Mini App</p></li>
       <li><b>Д7-8</b><span class="bar"><i style="left:54.55%;width:18.18%"></i></span><p>Исполнитель поручений: реинвест, докупка по плану, ребаланс по порогам</p></li>
@@ -610,7 +610,7 @@ h1 { margin: 34px 0 0; font-size: 140px; line-height: .92; font-weight: 800; let
         <a class="lk" href="index.html"><small>Сайт</small><span>index.html</span></a>
         <a class="lk" href="https://github.com/petroreshov-droid/mandat"><small>Код</small><span>github.com/petroreshov-droid/mandat</span></a>
       </div>
-      <span class="src">Ядро уже работает в прототипе на синтетических рыночных данных. В MVP данные и заявки идут через песочницу T-Invest MCP</span>
+      <span class="src">Прототип в браузере - на синтетических данных; шлюз и основной сценарий уже проверены на песочнице T-Invest MCP 16.11.2026</span>
     </div>
   </div>
   <footer class="sf"><b>Мандат · Edge Lab</b><span class="sf-n">12 / 13</span></footer>

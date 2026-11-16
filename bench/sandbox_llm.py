@@ -67,13 +67,21 @@ class Accounts:
 
 
 def run(
-    token: str, ca: str, model: str, runs: int, temperature: float, only: set[str], save: Any = None
+    token: str,
+    ca: str,
+    model: str,
+    runs: int,
+    temperature: float,
+    only: set[str],
+    save: Any = None,
+    done: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     client = TInvestMcpClient(SANDBOX_URL, token=token, ca_bundle=ca)
     scenarios = [json.loads(line) for line in SCENARIOS.open(encoding="utf-8") if line.strip()]
     scenarios = [s for s in scenarios if not only or s["id"] in only]
     system, mandate = sandbox_system(), sandbox_mandate()
-    records, failures = [], []
+    records, failures = list((done or {}).get("records", [])), []
+    finished = {(r["id"], r["run"]) for r in records}
     meta = {
         "model": model,
         "model_source": "t-tech/T-lite-it-2.1-GGUF, Q4_K_M",
@@ -84,6 +92,8 @@ def run(
     }
     for sc in scenarios:
         for run_no in range(1, runs + 1):
+            if (sc["id"], run_no) in finished:  # продолжение прерванного прогона
+                continue
             accounts = Accounts(client)
             try:
                 via, direct = accounts.new(), accounts.new()
@@ -134,6 +144,7 @@ def main() -> None:
     ap.add_argument("--runs", type=int, default=1)
     ap.add_argument("--temperature", type=float, default=0.7)
     ap.add_argument("--only", default="", help="через запятую: id сценариев")
+    ap.add_argument("--resume", action="store_true", help="продолжить: готовые записи из sandbox_llm.json не повторять")
     args = ap.parse_args()
     only = {s.strip() for s in args.only.split(",") if s.strip()}
     RESULTS.mkdir(exist_ok=True)
@@ -143,7 +154,8 @@ def main() -> None:
         out.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
 
     token = read_token(args.token_file.expanduser())
-    data = run(token, args.ca_bundle, args.model, args.runs, args.temperature, only, save=save)
+    done = json.loads(out.read_text(encoding="utf-8")) if args.resume and out.exists() else None
+    data = run(token, args.ca_bundle, args.model, args.runs, args.temperature, only, save=save, done=done)
     save(data)
     s = summarize(data)
     (RESULTS / "sandbox_llm_summary.json").write_text(json.dumps(s, ensure_ascii=False, indent=1), encoding="utf-8")
