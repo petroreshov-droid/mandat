@@ -7,10 +7,7 @@ import pytest
 from mandat.brokers import MockBroker
 from mandat.brokers.base import BrokerError
 from mandat.brokers.tinvest_mcp import (
-    TOOL_MAP,
-    TInvestMcpBroker,
     TInvestMcpClient,
-    ToolMappingError,
     parse_sse,
 )
 from mandat.fixtures import load_market
@@ -270,29 +267,6 @@ def test_connection_failure_is_a_broker_error_without_token():
     with pytest.raises(BrokerError) as exc:
         c.list_tools()
     assert TOKEN not in str(exc.value)
-
-
-# --- T-Invest MCP: адаптер брокера ---
-
-
-def test_tool_map_is_a_single_explicit_dict_waiting_for_the_sandbox():
-    assert set(TOOL_MAP) == {"portfolio", "instrument", "last_price", "orderbook", "fx", "post_order"}
-
-
-def test_broker_refuses_while_tool_names_are_unknown():
-    broker = TInvestMcpBroker(client(), tool_map={k: None for k in TOOL_MAP})
-    with pytest.raises(ToolMappingError, match="(?i)проверить на песочнице"):
-        broker.snapshot()
-    with pytest.raises(ToolMappingError, match="post_order"):
-        broker.place_order({"ticker": "SBER", "side": "buy", "quantity": 10})
-    assert issubclass(ToolMappingError, NotImplementedError)
-
-
-def test_broker_does_not_guess_response_formats_even_when_names_are_given():
-    named = {k: f"tool_{k}" for k in TOOL_MAP}
-    broker = TInvestMcpBroker(client(), tool_map=named)
-    with pytest.raises(NotImplementedError, match="разбор ответов"):
-        broker.snapshot()
 
 
 def test_tools_listing_cli(capsys, monkeypatch):

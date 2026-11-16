@@ -156,7 +156,9 @@ class Gateway:
             pending = self._pending_or_raise(pending_id)
             now = self._tick()
             order = pending.order
-            market = self.broker.snapshot()
+            market, broker_down = self._snapshot()
+            if broker_down is not None:  # заявка остаётся ждать: клиент сможет подтвердить ещё раз
+                raise GatewayError(f"Брокер недоступен, заявка {pending_id} не отправлена: {broker_down}")
             # сама отложенная заявка уже учтена в состоянии: для повторной проверки её вычитаем
             recent = list(self.state.recent_order_ts)
             if pending.ts in recent:
@@ -243,8 +245,19 @@ class Gateway:
             except OrderFormatError as exc:
                 return self._deny_malformed(raw, now, str(exc))
 
-            market = self.broker.snapshot()
             before = self._state_before(now, order, self.state.recent_order_ts, self.state.seen_order_ids)
+            market, broker_down = self._snapshot()
+            if broker_down is not None:
+                self.state.recent_order_ts.append(now)  # попытка учитывается для RUNAWAY
+                return self._deny_without_engine(
+                    "broker_unavailable",
+                    _check("BROKER_UNAVAILABLE", broker_down),
+                    now,
+                    before,
+                    order["agent"],
+                    strike=False,  # сбой брокера - не вина агента
+                    order=order,
+                )
             result = self._evaluate(order, self.mandate, market, self.state.as_dict())
 
             st = self.state
@@ -373,6 +386,13 @@ class Gateway:
         if sum(1 for ts in st.violation_ts if now - ts < STRIKE_WINDOW) >= STRIKES_TO_PAUSE:
             st.paused = True
 
+    def _snapshot(self) -> tuple[dict[str, Any] | None, str | None]:
+        """Снимок рынка у брокера. Сбой не роняет шлюз: заявка без снимка не проверяется и не отправляется."""
+        try:
+            return self.broker.snapshot(), None
+        except Exception as exc:  # noqa: BLE001 - любой сбой брокера означает «не проверено, не отправлено»
+            return None, f"нет данных брокера для проверки ({type(exc).__name__}: {exc})"[:300]
+
     def _send(self, order: dict[str, Any], order_value: float) -> dict[str, Any]:
         try:
             response = self.broker.place_order(order)
@@ -403,10 +423,19 @@ class Gateway:
         )
 
     def _deny_without_engine(
-        self, kind: str, check: dict[str, Any], now: float, before: dict[str, Any], agent: str, **extra: Any
+        self,
+        kind: str,
+        check: dict[str, Any],
+        now: float,
+        before: dict[str, Any],
+        agent: str,
+        *,
+        strike: bool = True,
+        **extra: Any,
     ) -> dict[str, Any]:
-        """Отказ, который не проходит через движок (смена мандата, неверный формат заявки): нарушение и запись в журнал."""
-        self._strike(now)
+        """Отказ мимо движка (смена мандата, неверный формат, нет данных брокера): запись в журнал, обычно и нарушение."""
+        if strike:
+            self._strike(now)
         explanation = f"Отклонено: {check['detail']}"
         payload = {
             "kind": kind,
