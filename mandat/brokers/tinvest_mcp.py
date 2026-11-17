@@ -63,6 +63,8 @@ FX_INSTRUMENTS = {
 MAX_PARALLEL = 8  # одновременных вызовов MCP при снятии снимка
 READ_ATTEMPTS = 3  # чтение данных при сетевом сбое: всего попыток
 RETRY_PAUSE = 0.3  # секунд перед повтором, растёт с номером попытки
+# Песочница 17.11.2026: больше ~2 заявок в секунду с токена - ответ INTERNAL (заявка не исполняется).
+ORDER_GAP = 0.6  # секунд между отправками заявок с одного клиента
 ORDER_STATUS = {
     "EXECUTION_REPORT_STATUS_FILL": "filled",
     "EXECUTION_REPORT_STATUS_PARTIALLYFILL": "partial",
@@ -123,6 +125,7 @@ class TInvestMcpClient:
         *,
         timeout: float = 30.0,
         transport: Transport | None = None,
+        order_gap: float = ORDER_GAP,
     ):
         parsed = urlparse(url)
         if parsed.scheme != "https" and not (parsed.scheme == "http" and parsed.hostname in LOOPBACK_HOSTS):
@@ -139,6 +142,9 @@ class TInvestMcpClient:
         self._ready = False
         self._lock = threading.Lock()  # снимок рынка вызывает инструменты параллельно
         self._init_lock = threading.Lock()
+        self._order_gap = order_gap
+        self._order_lock = threading.Lock()
+        self._last_order = float("-inf")
 
     def __repr__(self) -> str:  # токен в репрезентацию не попадает
         return f"TInvestMcpClient(url={self.url!r})"
@@ -219,7 +225,13 @@ class TInvestMcpClient:
     def call(self, tool: str, args: dict[str, Any] | None = None) -> Any:
         """Вызывает инструмент. Возвращает structuredContent, иначе разобранный JSON из текста, иначе текст."""
         self._ensure_ready()
-        result = self._rpc("tools/call", {"name": tool, "arguments": args or {}})
+        if tool == "invest_create_order":  # заявки - не чаще лимита банка, иначе INTERNAL вместо сделки
+            with self._order_lock:
+                time.sleep(max(0.0, self._last_order + self._order_gap - time.monotonic()))
+                self._last_order = time.monotonic()
+                result = self._rpc("tools/call", {"name": tool, "arguments": args or {}})
+        else:
+            result = self._rpc("tools/call", {"name": tool, "arguments": args or {}})
         texts = [c.get("text", "") for c in result.get("content", []) if c.get("type") == "text"]
         if result.get("isError"):
             raise BrokerError(f"T-Invest MCP, {tool}: {' '.join(texts)[:300] or 'ошибка инструмента'}")

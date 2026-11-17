@@ -1,6 +1,7 @@
 """Адаптер T-Invest MCP на фейковом сервере. Ответы повторяют форматы песочницы (сверено 16.11.2026)."""
 
 import json
+import time
 
 import pytest
 
@@ -396,3 +397,21 @@ def test_reads_are_retried_after_a_network_blip_but_orders_are_not(monkeypatch):
     with pytest.raises(BrokerError, match="недоступен"):
         b.place_order({"ticker": "SBER", "side": "buy", "quantity": 1, "price": 296.0})
     assert names(server).count("invest_create_order") == 1  # повтор заявки купил бы второй раз
+
+
+def test_orders_are_spaced_by_bank_rate_limit():
+    """Песочница отвечает INTERNAL на заявки чаще ~2 в секунду: клиент выдерживает интервал между заявками."""
+    server, sent = FakeTInvest(), []
+
+    def transport(url, headers, body):
+        if json.loads(body).get("params", {}).get("name") == "invest_create_order":
+            sent.append(time.monotonic())
+        return server(url, headers, body)
+
+    client = TInvestMcpClient(token=TOKEN, transport=transport, order_gap=0.2)
+    b = TInvestMcpBroker(client, account_id=ACC, universe=dict(UNIVERSE))
+    for _ in range(3):
+        b.place_order({"ticker": "SBER", "side": "buy", "quantity": 1, "price": None})
+    client.call("invest_get_positions", {"accountId": ACC})  # чтение не ждёт
+    assert len(sent) == 3
+    assert min(y - x for x, y in zip(sent, sent[1:])) >= 0.19
