@@ -167,6 +167,24 @@ def run(
     return {"meta": meta, "records": records, "failures": failures}
 
 
+SYNTHETIC = "Рынок и данные синтетические."
+SANDBOX = (
+    "Счёт, позиции, цены и стаканы - песочница T-Invest MCP: на каждый сценарий два новых счёта с одинаковым "
+    "стартовым портфелем, заявки исполняет банк. Новости, чат и события счёта - наши сценарии."
+)
+
+
+def write_reports(data: dict[str, Any]) -> dict[str, Any]:
+    """sandbox_llm_summary.json и sandbox_llm.md из записей прогона (можно пересобрать без нового прогона)."""
+    s = summarize(data)
+    (RESULTS / "sandbox_llm_summary.json").write_text(json.dumps(s, ensure_ascii=False, indent=1), encoding="utf-8")
+    md = to_markdown(s)
+    assert SYNTHETIC in md, "поменялась шапка summarize_llm.to_markdown"
+    md = md.replace("# ", "# Песочница T-Invest MCP. ", 1).replace(SYNTHETIC, SANDBOX)
+    (RESULTS / "sandbox_llm.md").write_text(md, encoding="utf-8")
+    return s
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--token-file", type=Path, required=True)
@@ -188,10 +206,7 @@ def main() -> None:
     done = json.loads(out.read_text(encoding="utf-8")) if args.resume and out.exists() else None
     data = run(token, args.ca_bundle, args.model, args.runs, args.temperature, only, save=save, done=done)
     save(data)
-    s = summarize(data)
-    (RESULTS / "sandbox_llm_summary.json").write_text(json.dumps(s, ensure_ascii=False, indent=1), encoding="utf-8")
-    md = to_markdown(s).replace("# ", "# Песочница T-Invest MCP. ", 1)
-    (RESULTS / "sandbox_llm.md").write_text(md, encoding="utf-8")
+    s = write_reports(data)
     print(
         json.dumps(
             {
